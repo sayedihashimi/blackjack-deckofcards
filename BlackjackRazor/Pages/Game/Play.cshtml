@@ -1,0 +1,70 @@
+@page
+@model GamePlayModel
+@{
+    ViewData["Title"] = "Play";
+    var g = Model.State?.Game;
+    var stats = Model.State?.Stats;
+}
+@if (!User.Identity?.IsAuthenticated ?? true)
+{
+    <div class="text-center mt-10">
+        <p class="mb-4">You must sign in to play.</p>
+        <a class="button-casino" asp-page="/Auth/SignIn">Sign In</a>
+    </div>
+    return;
+}
+@if (g == null || string.IsNullOrEmpty(g.DeckId))
+{
+    <div class="text-center mt-10">
+        <p class="mb-4">No active game.</p>
+        <a class="button-casino" asp-page="/Game/New">Start New Game</a>
+    </div>
+    return;    
+}
+<div class="grid md:grid-cols-4 gap-4 mt-4">
+  <div class="md:col-span-3 space-y-6">
+    <div class="stats-panel">
+      <h3 class="text-xl font-bold mb-2">Dealer</h3>
+      <div class="flex gap-2 flex-wrap">
+        @foreach (var c in g.DealerCards)
+        {
+            <div class="card"><img src="@c.Image" alt="@c.Code" /></div>
+        }
+      </div>
+    </div>
+    <div class="space-y-4">
+      @for (int i=0;i<g.PlayerHands.Count;i++)
+      {
+          var hand = g.PlayerHands[i];
+          var active = i == g.ActiveHandIndex && g.HandInProgress;
+          <div class="stats-panel @(active?"ring-4 ring-gold-500":"")">
+            <div class="flex justify-between mb-2"><span class="font-semibold">Hand @(i+1) Bet: $@hand.Bet</span><span>@(hand.Result==BlackjackRazor.Engine.HandResult.Pending?"":hand.Result)</span></div>
+            <div class="flex gap-2 flex-wrap">
+              @foreach (var c in hand.Cards)
+              {
+                  <div class="card"><img src="@c.Image" alt="@c.Code" /></div>
+              }
+            </div>
+          </div>
+      }
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <form method="post" asp-page-handler="Deal"><button class="button-casino" @(g.HandInProgress?"disabled":"")>Deal</button></form>
+      <form method="post" asp-page-handler="Hit"><button class="button-casino" @(Model.CanHit?"":"disabled")>Hit</button></form>
+      <form method="post" asp-page-handler="Stand"><button class="button-casino" @(Model.CanStand?"":"disabled")>Stand</button></form>
+      <form method="post" asp-page-handler="Split"><button class="button-casino" @(Model.CanSplit?"":"disabled")>Split</button></form>
+      <form method="post" asp-page-handler="Double"><button class="button-casino" @(Model.CanDouble?"":"disabled")>Double Down</button></form>
+      <form method="post" asp-page-handler="New"><button class="button-casino">New Hand</button></form>
+    </div>
+  </div>
+  <div class="space-y-4">
+      <div class="stats-panel">
+        <h3 class="text-lg font-bold mb-2">Session Stats</h3>
+        <ul class="text-sm space-y-1">
+            <li>Bankroll: $@stats?.Bankroll</li>
+            <li>Hands: @stats?.HandsPlayed W: @stats?.HandsWon L: @stats?.HandsLost P: @stats?.HandsPushed</li>
+            <li>Blackjacks: @stats?.Blackjacks</li>
+        </ul>
+      </div>
+  </div>
+</div>

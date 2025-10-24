@@ -1,0 +1,17 @@
+/* Base layout */
+html { font-size: 14px; }
+@media (min-width: 768px) { html { font-size: 16px; } }
+html { position: relative; min-height: 100%; }
+body { margin: 0; }
+
+/* Casino Theme (manual equivalents of Tailwind utility combos) */
+body { background: radial-gradient(circle at 50% 30%, #14532d 0%, #102a13 70%, #081609 100%); color:#FFD700; min-height:100vh; font-family: ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif; }
+.card { border-radius:1.5rem; box-shadow:0 0 20px 2px #FFD700; background-color:#14532d; border:4px solid #FFC300; display:flex; align-items:center; justify-content:center; }
+.button-casino { padding:.75rem 1.5rem; font-size:1.125rem; font-weight:700; border:2px solid #FFC300; border-radius:1.5rem; background-color:#14532d; color:#FFD700; box-shadow:0 0 20px 2px #FFD700; cursor:pointer; transition:all .15s ease-in-out; display:inline-block; }
+.button-casino:hover { background-color:#FFD700; color:#102a13; }
+.stats-panel { background-color:#14532d; border:2px solid #FFC300; border-radius:1.5rem; padding:1rem; color:#FFD700; box-shadow:0 0 20px 2px #FFD700; }
+@media (max-width:480px){ .button-casino { font-size:.95rem; padding:.6rem 1rem; } }
+
+/* Responsive card sizing */
+.card img { width:96px; }
+@media (max-width:640px){ .card img { width:64px; } .button-casino { width:100%; margin-bottom:.5rem; } }

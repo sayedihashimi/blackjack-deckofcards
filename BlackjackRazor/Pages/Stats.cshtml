@@ -1,0 +1,36 @@
+@page
+@model StatsModel
+@{
+    ViewData["Title"] = "Stats";
+}
+<div class="max-w-4xl mx-auto mt-6 space-y-6">
+  <div class="stats-panel">
+    <h2 class="text-2xl font-bold mb-4">Session Stats (@User.Identity?.Name)</h2>
+    <ul class="grid sm:grid-cols-3 gap-2 text-sm">
+      <li>Bankroll: $@Model.SessionStats?.Bankroll</li>
+      <li>Hands: @Model.SessionStats?.HandsPlayed</li>
+      <li>Wins: @Model.SessionStats?.HandsWon</li>
+      <li>Losses: @Model.SessionStats?.HandsLost</li>
+      <li>Pushes: @Model.SessionStats?.HandsPushed</li>
+      <li>Blackjacks: @Model.SessionStats?.Blackjacks</li>
+    </ul>
+  </div>
+  <div class="stats-panel">
+    <h2 class="text-xl font-semibold mb-3">Lifetime Stats</h2>
+    @if (Model.DbStat == null)
+    {
+        <p>No recorded stats yet.</p>
+    }
+    else
+    {
+      <ul class="grid sm:grid-cols-3 gap-2 text-sm">
+        <li>Games Played: @Model.DbStat.GamesPlayed</li>
+        <li>Games Won: @Model.DbStat.GamesWon</li>
+        <li>Games Lost: @Model.DbStat.GamesLost</li>
+        <li>Blackjacks: @Model.DbStat.Blackjacks</li>
+        <li>Total Bet: $@Model.DbStat.TotalBet</li>
+        <li>Total Payout: $@Model.DbStat.TotalPayout</li>
+      </ul>
+    }
+  </div>
+</div>

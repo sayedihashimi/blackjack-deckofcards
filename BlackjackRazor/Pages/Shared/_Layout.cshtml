@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - BlackjackRazor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+              extend: {
+                colors: {
+                  casinoGreen: {950: '#102a13', 900: '#14532d'},
+                  gold: {400: '#FFD700', 500: '#FFC300'}
+                },
+                boxShadow: { casino: '0 0 20px 2px #FFD700' },
+                borderRadius: { casino: '1.5rem' }
+              }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="bg-casinoGreen-950 text-yellow-400 min-h-screen flex flex-col">
+    <header class="bg-casinoGreen-900 border-b border-gold-500 shadow-casino">
+        <nav class="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
+            <div class="flex items-center gap-6">
+                <a class="text-2xl font-bold text-gold-400" asp-area="" asp-page="/Index">BlackjackRazor</a>
+                <a class="hover:text-gold-400" asp-page="/Game/New">New Game</a>
+                <a class="hover:text-gold-400" asp-page="/Game/Play">Play</a>
+                <a class="hover:text-gold-400" asp-page="/Stats">Stats</a>
+            </div>
+            <div class="flex items-center gap-4">
+                @if (User?.Identity?.IsAuthenticated ?? false)
+                {
+                    <span class="text-gold-400 font-semibold">@User.Identity!.Name</span>
+                    <a class="button-casino text-sm" asp-page="/Auth/SignOut">Sign Out</a>
+                }
+                else
+                {
+                    <a class="button-casino text-sm" asp-page="/Auth/SignIn">Sign In</a>
+                }
+            </div>
+        </nav>
+    </header>
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4">
+        @RenderBody()
+    </main>
+    <footer class="mt-8 py-4 text-center text-xs border-t border-gold-500 bg-casinoGreen-900">&copy; 2025 - BlackjackRazor</footer>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,19 @@
+@page
+@model GameNewModel
+@{
+    ViewData["Title"] = "New Game";
+}
+<div class="max-w-xl mx-auto mt-8 stats-panel">
+  <h2 class="text-2xl font-bold mb-4">New Game</h2>
+  <form method="post" class="space-y-4">
+    <div>
+      <label class="block mb-1">Deck Count (1-8)</label>
+      <input type="number" min="1" max="8" name="DeckCount" value="@Model.DeckCount" class="w-full p-2 rounded bg-casinoGreen-950 border border-gold-500" />
+    </div>
+    <div>
+      <label class="block mb-1">Default Bet</label>
+      <input type="number" min="1" name="DefaultBet" value="@Model.DefaultBet" class="w-full p-2 rounded bg-casinoGreen-950 border border-gold-500" />
+    </div>
+    <button type="submit" class="button-casino w-full">Create Game</button>
+  </form>
+</div>
