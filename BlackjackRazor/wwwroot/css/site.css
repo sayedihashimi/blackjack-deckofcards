@@ -10,6 +10,11 @@ body { background: radial-gradient(circle at 50% 30%, #14532d 0%, #102a13 70%, #
 .button-casino { padding:.75rem 1.5rem; font-size:1.125rem; font-weight:700; border:2px solid #FFC300; border-radius:1.5rem; background-color:#14532d; color:#FFD700; box-shadow:0 0 20px 2px #FFD700; cursor:pointer; transition:all .15s ease-in-out; display:inline-block; }
 .button-casino:hover { background-color:#FFD700; color:#102a13; }
 .stats-panel { background-color:#14532d; border:2px solid #FFC300; border-radius:1.5rem; padding:1rem; color:#FFD700; box-shadow:0 0 20px 2px #FFD700; }
+/* Result banner colors */
+.result-win { background-color:#1e7f3a; border-color:#3cff7d; }
+.result-loss { background-color:#7f1e1e; border-color:#ff4e4e; }
+.result-push { background-color:#444444; border-color:#888888; }
+.result-blackjack { background-color:#2f3a7f; border-color:#7d9dff; }
 @media (max-width:480px){ .button-casino { font-size:.95rem; padding:.6rem 1rem; } }
 
 /* Responsive card sizing */

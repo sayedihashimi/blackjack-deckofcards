@@ -138,6 +138,7 @@ public static class BlackjackEngine
         if (state.HandInProgress) return;
         state.PlayerHands.Clear();
         state.DealerCards.Clear();
+        state.DealerDone = false;
         var playerHand = new PlayerHand { Bet = bet };
         var cardsNeeded = 4; // two player, two dealer
         var drawn = await api.DrawAsync(state.DeckId, cardsNeeded);

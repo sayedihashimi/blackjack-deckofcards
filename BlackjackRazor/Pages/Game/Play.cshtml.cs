@@ -102,11 +102,14 @@ public class GamePlayModel : PageModel
         var dealerHv = BlackjackEngine.Evaluate(State.Game.DealerCards);
         var username = User.Identity!.Name!;
         var user = db.Users.FirstOrDefault(u => u.Username == username);
+        int totalNet = 0;
+        List<string> handSummaries = new();
         foreach (var hand in State.Game.PlayerHands)
         {
             var hv = BlackjackEngine.Evaluate(hand.Cards);
             var payout = BlackjackEngine.Payout(hand, hv, dealerHv);
             if (payout > 0) State.Stats.Bankroll += payout; // includes original bet returned
+            totalNet += (payout - hand.Bet);
             State.Stats.HandsPlayed++;
             switch (hand.Result)
             {
@@ -116,6 +119,7 @@ public class GamePlayModel : PageModel
                 case HandResult.Push: State.Stats.HandsPushed++; break;
                 case HandResult.Bust: State.Stats.HandsLost++; break;
             }
+            handSummaries.Add($"Hand {State.Game.PlayerHands.IndexOf(hand)+1}: {hand.Result} (Bet ${hand.Bet}, Net {(payout - hand.Bet >=0?"+":"")}{payout - hand.Bet})");
             if (user != null)
             {
                 var stat = db.Stats.FirstOrDefault(s => s.UserId == user.Id);
@@ -139,5 +143,7 @@ public class GamePlayModel : PageModel
             }
         }
         if (user != null) await db.SaveChangesAsync();
+        State.Stats.LastNet = totalNet;
+        State.Stats.LastSummary = string.Join("; ", handSummaries);
     }
 }

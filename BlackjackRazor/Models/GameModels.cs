@@ -11,6 +11,8 @@ public class SessionStats
     public int HandsPushed { get; set; }
     public int Blackjacks { get; set; }
     public int Bankroll { get; set; } = 1000; // starting bankroll default
+    public int LastNet { get; set; }
+    public string? LastSummary { get; set; }
 }
 
 public class UserSessionState

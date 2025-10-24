@@ -26,9 +26,18 @@
     <div class="stats-panel">
       <h3 class="text-xl font-bold mb-2">Dealer</h3>
       <div class="flex gap-2 flex-wrap">
-        @foreach (var c in g.DealerCards)
+        @for (int i=0; i< g.DealerCards.Count; i++)
         {
-            <div class="card"><img src="@c.Image" alt="@c.Code" /></div>
+            var c = g.DealerCards[i];
+            bool hide = g.HandInProgress && !g.DealerDone && i==1; // hide hole card until dealer plays
+            if (hide)
+            {
+                <div class="card"><div style="width:96px;height:140px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.5rem;">?</div></div>
+            }
+            else
+            {
+                <div class="card"><img src="@c.Image" alt="@c.Code" /></div>
+            }
         }
       </div>
     </div>
@@ -56,6 +65,17 @@
       <form method="post" asp-page-handler="Double"><button class="button-casino" @(Model.CanDouble?"":"disabled")>Double Down</button></form>
       <form method="post" asp-page-handler="New"><button class="button-casino">New Hand</button></form>
     </div>
+    @if (!g.HandInProgress && g.PlayerHands.Count > 0 && Model.State?.Stats.LastSummary != null)
+    {
+      var net = Model.State.Stats.LastNet;
+      var bannerClass = net > 0 ? "result-win" : (net < 0 ? "result-loss" : "result-push");
+      if (Model.State.Stats.LastSummary.Contains("Blackjack")) bannerClass = "result-blackjack";
+      <div class="stats-panel mt-4 @bannerClass">
+        <h3 class="text-xl font-bold mb-2">Round Result</h3>
+        <p class="mb-2">@Model.State.Stats.LastSummary</p>
+        <p class="text-lg font-semibold">Net: @(net >=0?"+":"")@net</p>
+      </div>
+    }
   </div>
   <div class="space-y-4">
       <div class="stats-panel">
