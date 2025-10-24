@@ -52,13 +52,15 @@ You are generating a .NET 9 Razor Pages web app called "BlackjackRazor" that let
   * **Split** only when first two cards are of the same rank.
   * **Double Down** only on first move per hand.
   * **Stand** and **Hit** enabled/disabled as appropriate.
+* When the game starts, the **second card dealt to the dealer must be hidden** (face-down) until the player finishes their actions.
 * After the player has finished their actions, **reveal the dealer's down card**, then **play the dealer's hand automatically**, dealing **each card one-by-one** with a short visual delay between each draw.
+* The dealer must take **hits or stand** according to the official rules (draw to 16, stand on all 17s, and treat soft 17 as a hit until total ≥ 17).
 * When a **split** occurs:
 
   * Each hand should display its **own set of action buttons** (Hit, Stand, Double Down, etc.).
   * Keep track of the **bet and outcome for each hand** separately.
   * Display the **bet amount and result** (Win, Lose, Push) next to each hand in the UI.
-* Dealer must **draw to 16** and **stand on all 17s**, treating **soft 17 as a hit** until total ≥ 17.
+* When the game ends, **make it visually obvious what the result was** (Win/Loss/Push) and **show the total amount of money won or lost** clearly in the UI (e.g., a banner, toast, or overlay message).
 * Payouts per Bicycle:
 
   * Blackjack pays **3:2**.
@@ -76,7 +78,7 @@ You are generating a .NET 9 Razor Pages web app called "BlackjackRazor" that let
 * Dark mode enabled by default.
 * Match layout and style from `assets\\blackjack-mockup.png`:
 
-  * Dealer area at top, cards horizontally aligned.
+  * Dealer area at top, cards horizontally aligned; hide second dealer card until reveal.
   * Player area(s) below dealer, one section per hand (when split).
   * Each player hand shows bet amount and final result.
   * Buttons arranged horizontally below the player area (Hit, Stand, Split, Double Down, New Hand, End Game).
@@ -85,6 +87,7 @@ You are generating a .NET 9 Razor Pages web app called "BlackjackRazor" that let
   * Buttons: large, gold-outlined, glowing hover state for active actions.
   * Text and highlights use gold/yellow (`text-yellow-400`, `border-yellow-500`).
   * Add subtle casino effects: gradients, inner shadows, glowing borders.
+  * At the end of the game, display a clear **banner or modal** showing the final result and **amount won/lost**.
 * Ensure the page is **fully responsive**:
 
   * Cards shrink on mobile (`w-24 sm:w-16` or smaller).
@@ -144,8 +147,10 @@ You are generating a .NET 9 Razor Pages web app called "BlackjackRazor" that let
 ✅ Builds with zero compile errors.
 ✅ All tests pass.
 ✅ Web app runs successfully and plays Blackjack per Bicycle rules.
-✅ Dealer down card revealed and dealer plays out automatically card-by-card.
+✅ Dealer down card hidden initially, revealed before dealer play.
+✅ Dealer plays automatically card-by-card following rules.
 ✅ Split hands each show separate action buttons, bets, and outcomes.
+✅ Game end shows clear win/loss message and money change.
 ✅ Follows layout and design in `assets\\blackjack-mockup.png`.
 ✅ Fully responsive — all cards & controls visible on phones without scrolling.
 ✅ Dark Tailwind casino-style theme by default.
