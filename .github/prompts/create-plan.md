@@ -52,6 +52,12 @@ You are generating a .NET 9 Razor Pages web app called "BlackjackRazor" that let
   * **Split** only when first two cards are of the same rank.
   * **Double Down** only on first move per hand.
   * **Stand** and **Hit** enabled/disabled as appropriate.
+* After the player has finished their actions, **reveal the dealer's down card**, then **play the dealer's hand automatically**, dealing **each card one-by-one** with a short visual delay between each draw.
+* When a **split** occurs:
+
+  * Each hand should display its **own set of action buttons** (Hit, Stand, Double Down, etc.).
+  * Keep track of the **bet and outcome for each hand** separately.
+  * Display the **bet amount and result** (Win, Lose, Push) next to each hand in the UI.
 * Dealer must **draw to 16** and **stand on all 17s**, treating **soft 17 as a hit** until total ≥ 17.
 * Payouts per Bicycle:
 
@@ -72,6 +78,7 @@ You are generating a .NET 9 Razor Pages web app called "BlackjackRazor" that let
 
   * Dealer area at top, cards horizontally aligned.
   * Player area(s) below dealer, one section per hand (when split).
+  * Each player hand shows bet amount and final result.
   * Buttons arranged horizontally below the player area (Hit, Stand, Split, Double Down, New Hand, End Game).
   * Stats panel on the side or bottom (as per mockup).
   * Use Tailwind classes like `flex`, `justify-center`, `gap-4`, `bg-green-950`, `border-yellow-500`, `rounded-xl`, and glow/hover effects.
@@ -127,7 +134,7 @@ You are generating a .NET 9 Razor Pages web app called "BlackjackRazor" that let
 * Include at least unit tests for:
 
   * Hand value calculation (Ace handling).
-  * Dealer logic (soft 17, stand rules).
+  * Dealer logic (soft 17, stand rules, one-by-one dealing behavior).
   * Split & Double Down behavior.
   * Payout computation (Blackjack 3:2, Push, Bust).
 
@@ -137,6 +144,8 @@ You are generating a .NET 9 Razor Pages web app called "BlackjackRazor" that let
 ✅ Builds with zero compile errors.
 ✅ All tests pass.
 ✅ Web app runs successfully and plays Blackjack per Bicycle rules.
+✅ Dealer down card revealed and dealer plays out automatically card-by-card.
+✅ Split hands each show separate action buttons, bets, and outcomes.
 ✅ Follows layout and design in `assets\\blackjack-mockup.png`.
 ✅ Fully responsive — all cards & controls visible on phones without scrolling.
 ✅ Dark Tailwind casino-style theme by default.
