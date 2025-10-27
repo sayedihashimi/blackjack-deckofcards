@@ -1,0 +1,74 @@
+@page
+@model PlayGameModel
+@{
+    ViewData["Title"] = "Play";
+    var s = Model.State;
+}
+<div class="flex flex-col lg:flex-row gap-6">
+    <div class="flex-1">
+        <div class="mb-4 flex items-center justify-between">
+            <div class="text-yellow-300 text-xl font-semibold">Bankroll: $@s.Bankroll</div>
+            <div class="text-yellow-300">Default Bet: $@s.DefaultBet</div>
+        </div>
+        <section class="mb-8 p-4 rounded-xl bg-green-900/70 border border-yellow-500 shadow-inner">
+            <h2 class="text-3xl mb-4 text-center font-bold text-yellow-400">Dealer Cards</h2>
+            <div class="flex justify-center gap-2 flex-wrap">
+                @foreach(var c in s.Dealer.Cards){
+                    <img class="w-24 sm:w-16 rounded-lg shadow @(!s.Dealer.RevealHole && c.FaceDown ? "brightness-50" : "")" src="@(c.FaceDown && !s.Dealer.RevealHole ? "/assets/card-back.png" : c.ImageUrl)" alt="card" />
+                }
+            </div>
+        </section>
+        <section class="p-4 rounded-xl bg-green-900/70 border border-yellow-500 shadow-inner">
+            <h2 class="text-3xl mb-4 text-center font-bold text-yellow-400">Your Cards</h2>
+            @for(int i=0;i<s.Hands.Count;i++){
+                var hand = s.Hands[i];
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2 text-yellow-200">
+                        <span>Hand @(i+1) Bet: $@hand.Bet</span>
+                        <span>Value: @hand.HandValue()</span>
+                        @if(!string.IsNullOrEmpty(hand.Outcome)){<span class="font-bold">@hand.Outcome</span>}
+                    </div>
+                    <div class="flex gap-2 flex-wrap mb-3">
+                        @foreach(var c in hand.Cards){
+                           <img class="w-24 sm:w-16 rounded-lg shadow" src="@c.ImageUrl" alt="card" />
+                        }
+                    </div>
+                    @if(Model.ShowHandButtons(i)){
+                        <form method="post" class="flex flex-wrap gap-2">
+                            <input type="hidden" name="handIndex" value="@i" />
+                            <button name="action" value="hit" class="px-4 py-2 rounded bg-green-700 text-yellow-200 border border-yellow-500 disabled:opacity-40" disabled="@(!Model.CanHit(i))">Hit</button>
+                            <button name="action" value="stand" class="px-4 py-2 rounded bg-green-700 text-yellow-200 border border-yellow-500 disabled:opacity-40" disabled="@(!Model.CanStand(i))">Stand</button>
+                            <button name="action" value="double" class="px-4 py-2 rounded bg-green-700 text-yellow-200 border border-yellow-500 disabled:opacity-40" disabled="@(!Model.CanDouble(i))">Double Down</button>
+                            <button name="action" value="split" class="px-4 py-2 rounded bg-green-700 text-yellow-200 border border-yellow-500 disabled:opacity-40" disabled="@(!Model.CanSplit(i))">Split</button>
+                        </form>
+                    }
+                </div>
+            }
+            @if(s.GameResolved){
+                <div class="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
+                    <div class="w-full max-w-md p-6 bg-green-950 border border-yellow-500 rounded-xl shadow-xl text-center space-y-4">
+                        <h3 class="text-3xl font-bold text-yellow-400">Round Result</h3>
+                        <p class="text-yellow-200">Net Change: <span class="font-semibold @(s.RoundNet>=0?"text-green-400":"text-red-400")">$@s.RoundNet</span></p>
+                        <div class="text-sm text-yellow-300 space-y-1">
+                            @for(int i=0;i<s.Hands.Count;i++){ var h=s.Hands[i]; <div>Hand @(i+1): @h.Outcome (Bet $@h.Bet, Value @h.HandValue())</div> }
+                        </div>
+                        <div class="flex gap-4 justify-center">
+                            <a asp-page="/Game/New" class="px-4 py-2 rounded bg-green-700 hover:bg-green-600 text-yellow-200 border border-yellow-500">New Hand</a>
+                            <a asp-page="/Stats" class="px-4 py-2 rounded bg-green-700 hover:bg-green-600 text-yellow-200 border border-yellow-500">Stats</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </section>
+    </div>
+    <aside class="w-full lg:w-64 p-4 bg-green-900/70 border border-yellow-500 rounded-xl h-fit">
+        <h3 class="text-xl font-semibold mb-2 text-yellow-300">Session Stats</h3>
+        <ul class="space-y-1 text-yellow-200 text-sm">
+            <li>Hands: @Model.Stats.HandsPlayed</li>
+            <li>Won: @Model.Stats.HandsWon</li>
+            <li>Lost: @Model.Stats.HandsLost</li>
+            <li>Pushed: @Model.Stats.HandsPushed</li>
+            <li>Net: @Model.Stats.NetAmount</li>
+        </ul>
+    </aside>
+</div>

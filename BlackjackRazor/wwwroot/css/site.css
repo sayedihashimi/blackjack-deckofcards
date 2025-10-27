@@ -1,0 +1,7 @@
+/* Tailwind is loaded via CDN; custom utility extensions */
+.glow-gold { box-shadow: 0 0 10px rgba(234,179,8,0.5); }
+.inner-shadow { box-shadow: inset 0 0 10px rgba(0,0,0,0.6); }
+.card-back { background: radial-gradient(circle at 30% 30%, #1a2e25, #02140E); }
+@media (max-width:640px){
+  .table-responsive img{ width:4rem; }
+}

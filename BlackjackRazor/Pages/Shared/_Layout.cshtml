@@ -1,0 +1,36 @@
+﻿<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - BlackjackRazor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { casino: { 900:'#032617', 950:'#02140E' } } } } };
+    </script>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="min-h-screen flex flex-col bg-green-950 text-yellow-100 font-[system-ui]">
+    <header class="border-b border-yellow-500 bg-green-900/70 backdrop-blur">
+        <nav class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap gap-4 items-center text-sm">
+            <a class="text-yellow-300 font-bold" asp-page="/Index">Home</a>
+            <a class="text-yellow-300" asp-page="/Game/New">New Game</a>
+            <a class="text-yellow-300" asp-page="/Game/Play">Play</a>
+            <a class="text-yellow-300" asp-page="/Stats">Stats</a>
+            <a class="text-yellow-300" asp-page="/Privacy">Privacy</a>
+            <span class="ml-auto"></span>
+            @if(User?.Identity?.IsAuthenticated ?? false){
+                <span class="text-yellow-400 font-semibold">@User.Identity!.Name</span>
+                <a class="text-yellow-300" asp-page="/SignOut">Sign Out</a>
+            } else {
+                <a class="text-yellow-300" asp-page="/SignIn">Sign In</a>
+            }
+        </nav>
+    </header>
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+        @RenderBody()
+    </main>
+    <footer class="border-t border-yellow-500 text-center py-4 text-xs bg-green-900/70">&copy; 2025 BlackjackRazor</footer>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

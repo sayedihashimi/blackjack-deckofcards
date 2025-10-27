@@ -1,0 +1,52 @@
+@page
+@model StatsModel
+@{
+    ViewData["Title"] = "Stats";
+}
+<div class="max-w-3xl mx-auto mt-6 p-6 bg-green-950/80 border border-yellow-500 rounded-xl">
+    <h1 class="text-3xl font-bold mb-4 text-yellow-400">Session & Historical Stats</h1>
+    @if(Model.Username is not null){<p class="mb-4 text-yellow-200">Player: <span class="font-semibold">@Model.Username</span></p>} else {<p class="text-red-400">Not signed in.</p>}
+    <div class="grid sm:grid-cols-2 gap-6">
+        <div class="p-4 bg-green-900/60 rounded border border-yellow-500">
+            <h2 class="text-xl font-semibold mb-2 text-yellow-300">Current Session</h2>
+            <ul class="text-sm space-y-1 text-yellow-200">
+                <li>Hands Played: @Model.Session.HandsPlayed</li>
+                <li>Won: @Model.Session.HandsWon</li>
+                <li>Lost: @Model.Session.HandsLost</li>
+                <li>Pushed: @Model.Session.HandsPushed</li>
+                <li>Net: @Model.Session.NetAmount</li>
+            </ul>
+        </div>
+        <div class="p-4 bg-green-900/60 rounded border border-yellow-500">
+            <h2 class="text-xl font-semibold mb-2 text-yellow-300">Historical Totals</h2>
+            <ul class="text-sm space-y-1 text-yellow-200">
+                <li>Hands Played: @Model.TotalHands</li>
+                <li>Won: @Model.TotalWon</li>
+                <li>Lost: @Model.TotalLost</li>
+                <li>Pushed: @Model.TotalPushed</li>
+                <li>Net: @Model.TotalNet</li>
+            </ul>
+        </div>
+    </div>
+    <h2 class="text-xl font-semibold mt-8 mb-2 text-yellow-300">Recent Rounds</h2>
+    <table class="w-full text-sm text-yellow-100">
+        <thead>
+            <tr class="border-b border-yellow-500">
+                <th class="text-left py-1">Time (UTC)</th>
+                <th class="text-left py-1">Hands</th>
+                <th class="text-left py-1">Won/Lost/Pushed</th>
+                <th class="text-left py-1">Net</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach(var r in Model.Recent){
+            <tr class="border-b border-green-800">
+                <td class="py-1">@r.Timestamp.ToString("u")</td>
+                <td class="py-1">@r.HandsPlayed</td>
+                <td class="py-1">@r.HandsWon/@r.HandsLost/@r.HandsPushed</td>
+                <td class="py-1 @(r.NetAmount>=0?"text-green-400":"text-red-400")">@r.NetAmount</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
