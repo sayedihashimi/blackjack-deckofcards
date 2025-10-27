@@ -1,162 +1,147 @@
-You are generating a .NET 9 Razor Pages web app called "BlackjackRazor" that lets users play Blackjack using the public Deck of Cards API ([https://deckofcardsapi.com/](https://deckofcardsapi.com/)). Follow the spec below exactly.
+You are generating a .NET 9 Razor Pages web app called "BlackjackRazor" that lets users play Blackjack using the public Deck of Cards API ([https://deckofcardsapi.com/](https://deckofcardsapi.com/)). Follow this spec exactly. If anything is ambiguous, choose the option that best guarantees card images render visibly on desktop and mobile.
 
-# General Build Instructions
+# Build & Project Rules
 
-* Each **new project** must be created in its **own folder** and **cannot be nested** inside another project folder.
-  This includes **test projects** (e.g., `BlackjackRazor.Tests`).
-* After generating code, **verify the project builds successfully** with no compiler errors.
-* If any **test cases** are created, **execute them** and confirm **all pass**.
-* The web app must:
+* Create projects at the repository root; **no nested projects** (include `BlackjackRazor.Tests` if tests are added).
+* After generation: `dotnet build` must succeed and **all tests** (if any) must pass via `dotnet test`.
+* Language is **English**; use `<html lang="en" class="dark">`.
+* Styling: **Tailwind CSS** (dark, casino theme). Add a minimal Tailwind pipeline and ensure CSS loads in production build.
+* No shell command chaining with `&&`.
 
-  * Use **English** (`<html lang="en" class="dark">`).
-  * Use **Tailwind CSS** for styling.
-  * Default to a **dark casino-themed UI** (deep greens, gold accents, soft shadows, rounded cards/buttons).
-  * Use **buttons for all important actions** (Hit, Stand, Split, Double Down, Deal, New Hand, End Game).
-  * Be **fully responsive**: when viewed on a phone, **all cards and buttons must be visible without scrolling**.
-  * Follow the visual layout and styling shown in the file **`assets\\blackjack-mockup.png`** for the Play Blackjack page (`/Pages/Game/Play.cshtml`). Match the overall layout, spacing, button positions, colors, and visual hierarchy as closely as possible using Tailwind.
+# Card Visibility Safeguards (MANDATORY)
 
-# High-level
+Implement all of the following to ensure cards render:
 
-* Tech: .NET 9, Razor Pages (no MVC), minimal hosting, HttpClient typed client, EF Core Sqlite with migrations.
-* Card data & images come from Deck of Cards API responses; do NOT bundle locally.
-* Implement full Blackjack per Bicycle rules ([https://bicyclecards.com/how-to-play/blackjack](https://bicyclecards.com/how-to-play/blackjack)).
-* Support actions: **Hit**, **Stand**, **Split**, **Double Down**.
-* Default to **6 decks** per shoe (user can override on new game creation).
-* Allow user to specify **default bet** when creating a game and **custom bet per hand** before dealing.
-* Use cookie-based sign-in with a **username only**, no password.
-* Track **session stats in memory** and **historical stats in Sqlite** via EF Core.
+1. **DTO & Usage**
 
-# Project Structure
+   * Deck API DTO: `CardDto { string Code; string Image; string Value; string Suit }`
+   * Use `card.Image` (fully-qualified https URL) directly in `<img src="...">`.
 
-* Create projects in top-level folders:
+2. **HttpClient**
 
-  * `BlackjackRazor` — main Razor Pages web app.
-  * `BlackjackRazor.Tests` — optional test project for BlackjackEngine and payout logic.
-* Files to include:
+   * Typed client `DeckApiClient` with:
 
-  * **Program.cs** — Razor Pages setup, cookie auth, session state, EF Sqlite, HttpClient for Deck API.
-  * **appsettings.json** — connection string to `"Data Source=blackjack.db"`.
-  * **/Data/AppDbContext.cs**, **Entities.cs**, **Mappings.cs** if needed.
-  * **/Services/DeckApiClient.cs** — Typed client for Deck of Cards API.
-  * **/Services/BlackjackEngine.cs** — Implements Bicycle rules (Hit, Stand, Split, Double Down, Aces handling, payouts).
-  * **/Models/GameModels.cs** — GameState, PlayerHand, SessionStats, etc.
-  * **/Pages/** — Razor Pages for SignIn, SignOut, Game/New, Game/Play, Stats, etc.
-  * **/wwwroot/css/site.css**, **tailwind.config.js** — Tailwind config with dark theme enabled by default.
-  * **/assets/blackjack-mockup.png** — reference design for Play page.
+     * `BaseAddress = https://deckofcardsapi.com/`
+     * `CreateShuffledDeckAsync(int n)` → `GET api/deck/new/shuffle/?deck_count={n}` returns `deck_id`
+     * `DrawAsync(string deckId, int count)` → `GET api/deck/{deck_id}/draw/?count={count}` returns `cards[]`
+   * Add transient retry (2 attempts) for `DrawAsync` if HTTP fails.
 
-# Gameplay Rules
+3. **Static Files + CSP**
 
-* Follow **Bicycle Blackjack rules** strictly.
-* Only enable actions that are currently valid:
+   * `app.UseStaticFiles();` **before** routing.
+   * Add a permissive CSP for images (only), e.g. middleware to set:
 
-  * **Split** only when first two cards are of the same rank.
-  * **Double Down** only on first move per hand.
-  * **Stand** and **Hit** enabled/disabled as appropriate.
-* When the game starts, the **second card dealt to the dealer must be hidden** (face-down) until the player finishes their actions.
-* After the player has finished their actions, **reveal the dealer's down card**, then **play the dealer's hand automatically**, dealing **each card one-by-one** with a short visual delay between each draw.
-* The dealer must take **hits or stand** according to the official rules (draw to 16, stand on all 17s, and treat soft 17 as a hit until total ≥ 17).
-* When a **split** occurs:
+     * `img-src 'self' https: data:` (do NOT block deckofcardsapi.com images).
 
-  * Each hand should display its **own set of action buttons** (Hit, Stand, Double Down, etc.).
-  * Keep track of the **bet and outcome for each hand** separately.
-  * Display the **bet amount and result** (Win, Lose, Push) next to each hand in the UI.
-* When the game ends, **make it visually obvious what the result was** (Win/Loss/Push) and **show the total amount of money won or lost** clearly in the UI (e.g., a banner, toast, or overlay message).
-* Payouts per Bicycle:
+4. **Razor Image Markup**
 
-  * Blackjack pays **3:2**.
-  * Win pays **1:1**.
-  * Push returns the bet.
-* Bets and bankroll:
+   * For each card:
 
-  * Deduct bet when hand starts.
-  * Apply payouts when hand resolves.
-  * Persist results to database.
+     ```html
+     <img src="@card.Image" alt="@card.Code"
+          loading="eager"
+          class="h-32 w-auto sm:h-24 max-w-full object-contain select-none" />
+     ```
+   * Never hide cards with `overflow:hidden` containers. Use `overflow-visible` and sufficient `gap`.
 
-# User Interface (Tailwind + Dark Casino Theme)
+5. **Layout Safety**
 
-* Use Tailwind CSS classes for all styling.
-* Dark mode enabled by default.
-* Match layout and style from `assets\\blackjack-mockup.png`:
+   * Use a centered container: `max-w-screen-xl mx-auto px-3`
+   * Do **not** use absolute positioning for core card rows.
+   * Ensure cards are in a visible flex row that wraps: `flex flex-wrap items-start justify-center gap-3`
 
-  * Dealer area at top, cards horizontally aligned; hide second dealer card until reveal.
-  * Player area(s) below dealer, one section per hand (when split).
-  * Each player hand shows bet amount and final result.
-  * Buttons arranged horizontally below the player area (Hit, Stand, Split, Double Down, New Hand, End Game).
-  * Stats panel on the side or bottom (as per mockup).
-  * Use Tailwind classes like `flex`, `justify-center`, `gap-4`, `bg-green-950`, `border-yellow-500`, `rounded-xl`, and glow/hover effects.
-  * Buttons: large, gold-outlined, glowing hover state for active actions.
-  * Text and highlights use gold/yellow (`text-yellow-400`, `border-yellow-500`).
-  * Add subtle casino effects: gradients, inner shadows, glowing borders.
-  * At the end of the game, display a clear **banner or modal** showing the final result and **amount won/lost**.
-* Ensure the page is **fully responsive**:
+6. **Diagnostics**
 
-  * Cards shrink on mobile (`w-24 sm:w-16` or smaller).
-  * Buttons wrap into multiple lines if needed.
-  * No horizontal scrolling; all game elements visible on small screens.
+   * Add `/Debug/State` page (dev-only) that prints current `GameState` JSON and a single test `<img>` with a hardcoded URL:
+     `https://deckofcardsapi.com/static/img/AS.png`
+   * If the test image fails to render, show a warning banner.
 
-# Authentication (Username-only)
+# Gameplay Rules (Bicycle)
 
-* Cookie-based, no Identity framework.
-* On SignIn:
+* Follow: [https://bicyclecards.com/how-to-play/blackjack](https://bicyclecards.com/how-to-play/blackjack)
+* Actions: **Hit, Stand, Split, Double Down** (valid only when rules allow).
+* Default shoe: **6 decks**, user can override on New Game.
+* Betting: default bet at game creation; per-hand bet before dealing; maintain bankroll; blackjack pays **3:2**; win **1:1**; push returns bet.
+* Dealer:
 
-  * User enters a username.
-  * Create ClaimsPrincipal(Name=username).
-  * Add new User to DB if not exists.
-  * Redirect to home.
-* On SignOut: clear cookie/session.
+  * On initial deal, **second dealer card is hidden**.
+  * After player finishes, **reveal** and play out **one card at a time** with a brief delay; draw to 16, hit soft-17 until total ≥ 17.
+* Split:
 
-# EF Core / Sqlite
+  * Only when first two player cards same rank.
+  * Each split hand shows **its own action buttons** and **its own bet & result** next to that hand.
 
-* Packages:
+# State & Persistence
 
-  * Microsoft.EntityFrameworkCore.Sqlite
-  * Microsoft.EntityFrameworkCore.Design
-* Commands (no `&&`):
+* Simple sign-in with username (cookie auth; no Identity).
+* Session:
 
+  * `GameState { string DeckId; int DeckCount; decimal Bankroll; decimal DefaultBet; decimal CurrentBet; List<PlayerHand> PlayerHands; List<CardDto> Dealer; bool IsRoundOver; int ActiveHand; string RoundMessage }`
+  * `PlayerHand { List<CardDto> Cards; bool IsComplete; bool IsBust; bool IsBlackjack; bool IsDoubled; bool IsSplit; decimal Bet; string? Outcome; decimal Payout }`
+  * `SessionStats { int Hands; int Wins; int Losses; int Pushes; int PlayerBlackjacks; int DealerBlackjacks; int PlayerBusts; int DealerBusts; decimal NetProfit }`
+* EF Core Sqlite (`blackjack.db`):
+
+  * `User(Id, Username unique, CreatedUtc)`
+  * `Game(Id, UserId, DeckCount, DeckId, StartedUtc, EndedUtc?, DefaultBet, BankrollStart, BankrollEnd, HandsPlayed, PlayerBlackjacks, DealerBlackjacks, PlayerBusts, DealerBusts, PlayerWins, DealerWins, Pushes)`
+  * `Hand(Id, GameId, HandIndex, Bet, Outcome, Payout, WasSplit, WasDouble, PlayedUtc)`
+
+# Pages & UX (Tailwind, Dark Casino Theme)
+
+* Follow layout of `assets/blackjack-mockup.png` for `/Pages/Game/Play.cshtml`.
+* Dealer row (top): cards in a flex row; **second card hidden** until player is done (use a local “card back” CSS block or SVG; don’t fetch external back image).
+* Player rows (below): one column per hand when split; each shows **bet**, **action buttons**, and final **result/payout**.
+* Controls:
+
+  * **Deal/Bet** input (numeric) before starting a round.
+  * During a hand: show **Hit**, **Stand**, **Split**, **Double Down**; enable/disable contextually.
+* Session sidebar/panel: Hands, W/L/Push, Blackjacks, Busts, NetProfit, Bankroll.
+* End of round: display a **clear banner** (e.g., top sticky or modal) summarizing each hand outcome and **total won/lost** this round.
+* Mobile (no scrolling requirement): make all cards & buttons visible without scrolling by:
+
+  * Using `flex-wrap`, `gap-2`, and scaling card height down: `h-24 md:h-28 lg:h-32`
+  * Wrapping buttons to a second row when needed.
+  * Avoiding fixed heights; allow content to wrap naturally.
+
+# Hidden-Card Implementation (no external asset)
+
+* Render the hidden dealer card as a Tailwind-styled “card back”:
+
+  ```html
+  <div class="h-32 sm:h-24 aspect-[71/96] rounded-md bg-gradient-to-br from-slate-700 to-slate-900 border border-slate-500 shadow-inner"></div>
   ```
-  dotnet tool install --global dotnet-ef
-  dotnet add package Microsoft.EntityFrameworkCore.Sqlite
-  dotnet add package Microsoft.EntityFrameworkCore.Design
-  dotnet ef migrations add InitialCreate
-  dotnet ef database update
-  ```
+* Replace this with the actual `<img>` once revealing the dealer’s down card.
 
-# Deck of Cards API
+# Program.cs
 
-* On new game: `GET /api/deck/new/shuffle/?deck_count={n}` → store deck_id.
-* On draw: `GET /api/deck/{deck_id}/draw/?count={count}`.
-* Use returned image URLs directly in `<img>` tags.
-* When deck exhausted, reshuffle automatically with same deck count.
+* Minimal hosting; `AddRazorPages()`, `AddSession()`, cookie auth (login path `/Auth/SignIn`).
+* `UseHttpsRedirection()`, `UseStaticFiles()`, **CSP img-src `'self' https: data:`**, `UseSession()`, `UseAuthentication()`, `UseAuthorization()`, `MapRazorPages()`.
+* Register `DeckApiClient` via `HttpClientFactory` and `AppDbContext` for Sqlite.
 
-# Testing & Verification
+# API Exhaustion Handling
 
-* After generating code:
+* If `remaining == 0` on draw, auto-create a fresh 6-deck shoe (or use current DeckCount) and continue.
 
-  * Ensure **no build errors** (`dotnet build` succeeds).
-  * If **test project** exists, run all tests (`dotnet test`) — all must pass.
-* Include at least unit tests for:
+# Tests (if you add a test project)
 
-  * Hand value calculation (Ace handling).
-  * Dealer logic (soft 17, stand rules, one-by-one dealing behavior).
-  * Split & Double Down behavior.
-  * Payout computation (Blackjack 3:2, Push, Bust).
+* Engine: totals (Aces), dealer soft-17 behavior, split & double flow, payouts (3:2 BJ, push).
+* Simple integration smoke: one “deal” sequence draws 4 images, and `AS` test image is retrievable.
+
+# Commands (one per line; no &&)
+
+* `dotnet tool install --global dotnet-ef`
+* `dotnet new webapp -n BlackjackRazor`
+* `cd BlackjackRazor`
+* `dotnet add package Microsoft.EntityFrameworkCore.Sqlite`
+* `dotnet add package Microsoft.EntityFrameworkCore.Design`
+* `dotnet ef migrations add InitialCreate`
+* `dotnet ef database update`
+* `dotnet run`
 
 # Acceptance Criteria
 
-✅ All projects created in separate folders (no nesting).
-✅ Builds with zero compile errors.
-✅ All tests pass.
-✅ Web app runs successfully and plays Blackjack per Bicycle rules.
-✅ Dealer down card hidden initially, revealed before dealer play.
-✅ Dealer plays automatically card-by-card following rules.
-✅ Split hands each show separate action buttons, bets, and outcomes.
-✅ Game end shows clear win/loss message and money change.
-✅ Follows layout and design in `assets\\blackjack-mockup.png`.
-✅ Fully responsive — all cards & controls visible on phones without scrolling.
-✅ Dark Tailwind casino-style theme by default.
-✅ Only valid actions are clickable at any time.
-✅ Images load from Deck of Cards API.
-✅ Sqlite database persists game and user stats.
-✅ Uses English language setting.
-✅ No chained shell commands (`&&`).
-✅ Works cleanly with .NET 9.
+* Cards are **visible** on desktop and mobile; the `/Debug/State` page’s `AS.png` also renders.
+* Dealer’s second card is hidden on deal, then revealed; dealer plays out **card-by-card**.
+* Only valid actions enabled at any time; split hands each have their own buttons and bet/result display.
+* Clear end-of-round banner shows **result** and **money won/lost**.
+* Dark Tailwind casino theme; responsive; no scrolling needed on phones for cards + buttons.
+* No nested projects; build succeeds; tests (if present) pass; images come from deckofcardsapi.com over HTTPS.
