@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { @apply bg-table-felt text-slate-100; }
+.felt-bg { background: radial-gradient(circle at 30% 30%, #115c44, #062017 85%); }

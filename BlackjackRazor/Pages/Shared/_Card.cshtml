@@ -1,0 +1,51 @@
+@model BlackjackRazor.UI.CardRenderModel
+@{
+    var baseClasses = $"{Model.SizeClasses} rounded shadow flex items-center justify-center font-semibold font-mono tracking-tight select-none transition-colors duration-150";
+    var faceClasses = "bg-green-700 inner-card";
+    var backClasses = "bg-neutral-700 bg-gradient-to-br from-neutral-600 to-neutral-900";
+    var highlight = Model.Highlight ? "ring-2 ring-yellow-400" : string.Empty;
+    var classes = $"card-resp {baseClasses} {(Model.Hidden ? backClasses : faceClasses)} {highlight}";
+    string Humanize(string code)
+    {
+        // code like "AS" or "10H" -> Rank + Suit
+        if (string.IsNullOrWhiteSpace(code)) return "Unknown card";
+        string rankPart = code[..^1];
+        char suitPart = code[^1];
+        string rank = rankPart switch
+        {
+            "A" => "Ace",
+            "J" => "Jack",
+            "Q" => "Queen",
+            "K" => "King",
+            "2" => "Two",
+            "3" => "Three",
+            "4" => "Four",
+            "5" => "Five",
+            "6" => "Six",
+            "7" => "Seven",
+            "8" => "Eight",
+            "9" => "Nine",
+            _ => rankPart
+        };
+        string suit = suitPart switch
+        {
+            'S' => "Spades",
+            'H' => "Hearts",
+            'D' => "Diamonds",
+            'C' => "Clubs",
+            _ => "Unknown"
+        };
+        return $"{rank} of {suit}";
+    }
+    var ariaLabel = Model.Hidden ? "Hidden card" : Humanize(Model.Code);
+}
+<div class="@classes" aria-label="@ariaLabel" role="img" tabindex="0">
+    @if (!Model.Hidden)
+    {
+        <span>@Model.Code</span>
+    }
+    else
+    {
+        <span class="opacity-40 text-xs">??</span>
+    }
+</div>

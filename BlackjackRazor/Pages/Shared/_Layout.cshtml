@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" class="dark h-full">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BlackjackRazor</title>
+    <meta name="description" content="BlackjackRazor early scaffold" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <style>
+        /* Fallback minimal styles if Tailwind build fails to load */
+        body { background:#0d1f1b; color:#f1f5f9; font-family: system-ui, sans-serif; }
+        .felt-bg { background: radial-gradient(circle at 30% 30%, #115c44, #062017 85%); }
+        /* Responsive card scaling */
+        @@media (max-width:640px){ .card-resp{ width:2.5rem !important; height:3.4rem !important; font-size:0.65rem !important; } }
+        @@media (max-width:480px){ .card-resp{ width:2.25rem !important; height:3.1rem !important; font-size:0.6rem !important; } }
+        @@media (max-width:400px){ .card-resp{ width:2rem !important; height:2.85rem !important; font-size:0.55rem !important; } }
+        body { overflow-x:hidden; }
+    </style>
+</head>
+<body class="min-h-full flex flex-col felt-bg">
+    <header class="p-4 text-center text-xl font-semibold tracking-wide">
+        BlackjackRazor <span class="text-sm opacity-60">(Scaffold)</span>
+    </header>
+    <main role="main" class="flex-1 container mx-auto p-4">
+        @RenderBody()
+    </main>
+    <footer class="p-4 text-center text-xs opacity-70">&copy; @DateTime.UtcNow.Year BlackjackRazor</footer>
+</body>
+</html>

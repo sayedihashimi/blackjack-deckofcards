@@ -1,0 +1,182 @@
+@page
+@using BlackjackRazor.Domain
+@model BlackjackRazor.Pages.Game.PlayModel
+@{
+    ViewData["Title"] = "Play Blackjack";
+    var snap = Model.Snapshot;
+    bool hasSnap = snap is not null;
+    bool allHandsCompleted = hasSnap && snap!.PlayerHands.All(h => h.IsCompleted);
+    var activeHand = hasSnap && snap!.ActiveHandIndex < snap.PlayerHands.Count ? snap.PlayerHands[snap.ActiveHandIndex] : null;
+    string Disable(bool enabled) => enabled ? "" : "opacity-40 cursor-not-allowed pointer-events-none";
+
+    // Build action state with reasons for disabled buttons
+    var actions = new Dictionary<string,(bool Enabled,string Reason)>{
+        ["New"] = ((!hasSnap) || snap!.Phase is GamePhase.NotStarted or GamePhase.Settled)
+            ? (true, "Start a new round")
+            : (false, "Round in progress"),
+        ["Deal"] = (hasSnap && snap!.Phase == GamePhase.NotStarted)
+            ? (true, "Deal initial cards")
+            : (false, hasSnap?"Already dealt":"No game"),
+        ["Hit"] = (hasSnap && snap!.Phase == GamePhase.PlayerActing && activeHand is not null && !activeHand.IsCompleted)
+            ? (true, "Draw a card")
+            : (false, !hasSnap?"No game": snap!.Phase!=GamePhase.PlayerActing?"Not player turn": activeHand is null?"No active hand": activeHand.IsCompleted?"Hand complete":"Cannot hit"),
+        ["Stand"] = (hasSnap && snap!.Phase == GamePhase.PlayerActing && activeHand is not null && !activeHand.IsCompleted)
+            ? (true, "Stand on this hand")
+            : (false, !hasSnap?"No game": snap!.Phase!=GamePhase.PlayerActing?"Not player turn": activeHand is null?"No active hand": activeHand.IsCompleted?"Hand complete":"Cannot stand"),
+        ["Split"] = (hasSnap && snap!.Phase == GamePhase.PlayerActing && activeHand is not null && !activeHand.IsCompleted && activeHand.Cards.Count == 2 && activeHand.Cards[0].Rank == activeHand.Cards[1].Rank && !activeHand.WasSplitChild)
+            ? (true, "Split pair")
+            : (false, !hasSnap?"No game": snap!.Phase!=GamePhase.PlayerActing?"Not player turn": activeHand is null?"No active hand": activeHand.IsCompleted?"Hand complete": activeHand.Cards.Count!=2?"Need exactly two cards": activeHand.Cards[0].Rank!=activeHand.Cards[1].Rank?"Ranks differ": activeHand.WasSplitChild?"Already split":"Cannot split"),
+        ["Double"] = (hasSnap && snap!.Phase == GamePhase.PlayerActing && activeHand is not null && !activeHand.IsCompleted && activeHand.Cards.Count == 2 && !activeHand.HasDoubled)
+            ? (true, "Double down")
+            : (false, !hasSnap?"No game": snap!.Phase!=GamePhase.PlayerActing?"Not player turn": activeHand is null?"No active hand": activeHand.IsCompleted?"Hand complete": activeHand.Cards.Count!=2?"Need two cards": activeHand.HasDoubled?"Already doubled":"Cannot double"),
+        ["Dealer"] = (hasSnap && snap!.Phase == GamePhase.PlayerActing && allHandsCompleted)
+            ? (true, "Play dealer hand")
+            : (false, !hasSnap?"No game": snap!.Phase!=GamePhase.PlayerActing?"Not player phase": !allHandsCompleted?"Player hands remaining":"Cannot advance"),
+        ["Settle"] = (hasSnap && snap!.Phase == GamePhase.Settled)
+            ? (true, "Settle payouts")
+            : (false, !hasSnap?"No game": snap!.Phase==GamePhase.DealerActing?"Need dealer finish":"Round not ready")
+    };
+}
+
+<div class="flex flex-col gap-4 lg:flex-row">
+    @* Floating end-of-round summary banner (auto-hide) *@
+    @if (snap is not null && snap.Phase == GamePhase.Settled && snap.SettlementResults.Any())
+    {
+        @await Html.PartialAsync("_RoundSummary", new BlackjackRazor.UI.RoundSummaryModel(snap))
+    }
+    <!-- Dealer Row -->
+    <div class="flex-1 bg-neutral-800/60 rounded p-4">
+        <h2 class="text-xl font-semibold mb-2">Dealer</h2>
+        @if (snap is not null)
+        {
+            var dealer = snap.Dealer;
+            bool conceal = snap.Phase == GamePhase.PlayerActing && !snap.DealerPlayed;
+            <div class="flex gap-2 flex-wrap">
+                @for (int i = 0; i < dealer.Cards.Count; i++)
+                {
+                    var dc = dealer.Cards[i];
+                    bool hidden = conceal && i == 1; // hide dealer hole card (second card) until dealer phase
+                    @await Html.PartialAsync("_Card", new BlackjackRazor.UI.CardRenderModel(hidden ? dc.ToShortCode() : dc.ToShortCode(), hidden, "md"))
+                }
+            </div>
+            <div class="mt-2 text-sm text-neutral-300">
+                @if (conceal)
+                {
+                    <text>Total: ?</text>
+                }
+                else
+                {
+                    <text>Total: @dealer.Evaluation.Total @(dealer.Evaluation.IsSoft?"(Soft)":"")</text>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Player Hands & Actions -->
+    <div class="flex-[2] flex flex-col gap-4">
+        <div class="bg-neutral-800/60 rounded p-4">
+            <h2 class="text-xl font-semibold mb-2">Your Hands</h2>
+            @if (snap is not null)
+            {
+                for (int i = 0; i < snap.PlayerHands.Count; i++)
+                {
+                    var ph = snap.PlayerHands[i];
+                    <div class="mb-4 border border-neutral-700 rounded p-2 @(i==snap.ActiveHandIndex?"ring-2 ring-yellow-400":"")">
+                        <div class="flex gap-2 flex-wrap">
+                            @foreach (var c in ph.Cards)
+                            {
+                                @await Html.PartialAsync("_Card", new BlackjackRazor.UI.CardRenderModel(c.ToShortCode(), false, "md", i==snap.ActiveHandIndex))
+                            }
+                        </div>
+                        <div class="mt-1 text-xs text-neutral-300">Total: @ph.Evaluation.Total @(ph.Evaluation.IsSoft?"(Soft)":"") @if(ph.Evaluation.IsBlackjack){<span class="text-yellow-300">Blackjack!</span>}</div>
+                    </div>
+                }
+            }
+        </div>
+        <div class="bg-neutral-800/70 rounded p-4">
+            <h2 class="text-lg font-semibold mb-2">Actions</h2>
+            <form method="post" class="flex flex-wrap gap-2">
+                <button formaction="?handler=NewGame" class="px-3 py-1 rounded bg-blue-600 @Disable(actions["New"].Enabled)" @(actions["New"].Enabled?null:"disabled") title="@actions["New"].Reason" aria-disabled="@(actions["New"].Enabled?"false":"true")">New</button>
+                <button formaction="?handler=Deal" class="px-3 py-1 rounded bg-indigo-600 @Disable(actions["Deal"].Enabled)" @(actions["Deal"].Enabled?null:"disabled") title="@actions["Deal"].Reason" aria-disabled="@(actions["Deal"].Enabled?"false":"true")">Deal</button>
+                <button formaction="?handler=Hit" class="px-3 py-1 rounded bg-green-600 @Disable(actions["Hit"].Enabled)" @(actions["Hit"].Enabled?null:"disabled") title="@actions["Hit"].Reason" aria-disabled="@(actions["Hit"].Enabled?"false":"true")">Hit</button>
+                <button formaction="?handler=Stand" class="px-3 py-1 rounded bg-yellow-600 @Disable(actions["Stand"].Enabled)" @(actions["Stand"].Enabled?null:"disabled") title="@actions["Stand"].Reason" aria-disabled="@(actions["Stand"].Enabled?"false":"true")">Stand</button>
+                <button formaction="?handler=Split" class="px-3 py-1 rounded bg-pink-600 @Disable(actions["Split"].Enabled)" @(actions["Split"].Enabled?null:"disabled") title="@actions["Split"].Reason" aria-disabled="@(actions["Split"].Enabled?"false":"true")">Split</button>
+                <button formaction="?handler=Double" class="px-3 py-1 rounded bg-orange-600 @Disable(actions["Double"].Enabled)" @(actions["Double"].Enabled?null:"disabled") title="@actions["Double"].Reason" aria-disabled="@(actions["Double"].Enabled?"false":"true")">Double</button>
+                <button formaction="?handler=Dealer" class="px-3 py-1 rounded bg-red-600 @Disable(actions["Dealer"].Enabled)" @(actions["Dealer"].Enabled?null:"disabled") title="@actions["Dealer"].Reason" aria-disabled="@(actions["Dealer"].Enabled?"false":"true")">Dealer</button>
+                <button formaction="?handler=Settle" class="px-3 py-1 rounded bg-teal-600 @Disable(actions["Settle"].Enabled)" @(actions["Settle"].Enabled?null:"disabled") title="@actions["Settle"].Reason" aria-disabled="@(actions["Settle"].Enabled?"false":"true")">Settle</button>
+            </form>
+            @if (TempData["Error"] is string err)
+            {
+                <div class="mt-3 text-sm text-red-400" role="alert">@err</div>
+            }
+        </div>
+    </div>
+
+    <!-- Stats Sidebar -->
+    <div class="w-full lg:w-64 bg-neutral-800/60 rounded p-4">
+        <h2 class="text-xl font-semibold mb-2">Stats</h2>
+        @if (snap is not null)
+        {
+            <ul class="text-sm space-y-1">
+                <li>Bankroll: <span class="font-mono">@snap.Bankroll</span></li>
+                <li>Bet: <span class="font-mono">@snap.CurrentBet</span></li>
+                <li>Phase: @snap.Phase</li>
+                <li>Hands: @snap.PlayerHands.Count</li>
+            </ul>
+            var lastEvent = snap.Events.LastOrDefault();
+            if (!string.IsNullOrEmpty(lastEvent))
+            {
+                var bannerColor = lastEvent.Contains("bust") ? "bg-red-700" : lastEvent.Contains("blackjack") ? "bg-green-700" : lastEvent.Contains("settled") ? "bg-teal-700" : "bg-neutral-700";
+                <div class="mt-4 p-2 text-xs rounded @bannerColor/80 border border-neutral-600" aria-live="polite" role="status">
+                    <span class="font-semibold">Event:</span> <span id="current-event">@lastEvent</span>
+                </div>
+                <div class="sr-only" aria-live="assertive" id="event-live-region">@lastEvent</div>
+            }
+            if (snap.Phase == GamePhase.Settled && snap.SettlementResults.Any())
+            {
+                <div class="mt-4">
+                    <h3 class="text-sm font-semibold mb-1">Settlement</h3>
+                    <table class="w-full text-xs border border-neutral-700">
+                        <thead class="bg-neutral-700/60">
+                            <tr>
+                                <th class="p-1 text-left">Hand</th>
+                                <th class="p-1 text-right">Bet</th>
+                                <th class="p-1 text-right">Payout</th>
+                                <th class="p-1 text-right">Net</th>
+                                <th class="p-1 text-left">Outcome</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var r in snap.SettlementResults)
+                        {
+                            var netClass = r.NetDelta > 0 ? "text-green-400" : r.NetDelta < 0 ? "text-red-400" : "text-neutral-300";
+                            <tr class="border-t border-neutral-700">
+                                <td class="p-1">@r.HandIndex</td>
+                                <td class="p-1 text-right">@r.Bet</td>
+                                <td class="p-1 text-right">@r.Payout</td>
+                                <td class="p-1 text-right @netClass">@r.NetDelta</td>
+                                <td class="p-1">@r.Outcome</td>
+                            </tr>
+                        }
+                        </tbody>
+                        <tfoot>
+                            <tr class="border-t border-neutral-700 font-semibold">
+                                <td class="p-1" colspan="3">Round Net</td>
+                                <td class="p-1 text-right @(snap.RoundNetDelta>0?"text-green-400":snap.RoundNetDelta<0?"text-red-400":"")">@snap.RoundNetDelta</td>
+                                <td class="p-1"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-neutral-400 text-sm">No game loaded.</div>
+        }
+    </div>
+</div>
+
+<style>
+    .inner-card { background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), rgba(0,0,0,0.4)); }
+</style>
