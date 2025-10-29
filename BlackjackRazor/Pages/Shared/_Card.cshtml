@@ -39,13 +39,15 @@
     }
     var ariaLabel = Model.Hidden ? "Hidden card" : Humanize(Model.Code);
 }
-<div class="@classes" aria-label="@ariaLabel" role="img" tabindex="0">
+<div class="@classes card-face" aria-label="@ariaLabel" role="img" tabindex="0">
     @if (!Model.Hidden)
     {
-        <span>@Model.Code</span>
+        var code = Model.Code; // already short code like AS, 0H, KD
+        var imgUrl = $"https://deckofcardsapi.com/static/img/{code}.png";
+        <img src="@imgUrl" alt="@ariaLabel" decoding="async" class="w-full h-full object-cover rounded" onerror="this.outerHTML='<span class=\'text-xs\'>@code</span>'" />
     }
     else
     {
-        <span class="opacity-40 text-xs">??</span>
+        <img src="/img/card-back.svg" alt="Hidden card" class="w-full h-full object-cover rounded opacity-80" />
     }
 </div>

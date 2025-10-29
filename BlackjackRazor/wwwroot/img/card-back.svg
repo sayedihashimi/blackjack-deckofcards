@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="168" viewBox="0 0 120 168" role="img" aria-label="Card back">
+  <rect x="2" y="2" width="116" height="164" rx="10" fill="#1f2937" stroke="#374151" stroke-width="4"/>
+  <g fill="#4b5563" stroke="#6b7280" stroke-width="1">
+    <circle cx="60" cy="84" r="40" fill="#111827" />
+    <path d="M60 50 L75 84 L60 118 L45 84 Z" fill="#1f2937" />
+  </g>
+  <text x="60" y="90" font-size="22" text-anchor="middle" fill="#9ca3af" font-family="Segoe UI, Arial, sans-serif">BJ</text>
+</svg>
