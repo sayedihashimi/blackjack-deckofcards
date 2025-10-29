@@ -6,10 +6,10 @@
     var net = Model.Net;
     string netClass = net > 0 ? "text-green-300" : net < 0 ? "text-red-300" : "text-neutral-200";
 }
-<div id="round-summary" class="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-[90%] max-w-2xl shadow-lg border border-neutral-700 rounded bg-neutral-900/95 backdrop-blur p-4 animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="round-summary-title">
+<div id="round-summary" data-roundsummary class="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-[90%] max-w-2xl shadow-lg border border-neutral-700 rounded bg-neutral-900/95 backdrop-blur p-4 animate-fade-in transition-opacity duration-300" role="dialog" aria-modal="true" aria-labelledby="round-summary-title" aria-hidden="false">
     <div class="flex justify-between items-start mb-2">
         <h3 id="round-summary-title" class="text-sm font-semibold tracking-wide" tabindex="-1">Round Summary</h3>
-        <button type="button" class="text-xs px-2 py-1 rounded bg-neutral-700 hover:bg-neutral-600" aria-label="Dismiss round summary" onclick="document.getElementById('round-summary').remove()">✕</button>
+        <button type="button" class="text-xs px-2 py-1 rounded bg-neutral-700 hover:bg-neutral-600" aria-label="Dismiss round summary" data-roundsummary-close>✕</button>
     </div>
     <div class="text-xs mb-2">
         <span class="font-semibold">Net:</span>
@@ -41,18 +41,6 @@
         }
         </tbody>
     </table>
-    <script>
-        // Focus dialog title for accessibility
-        (function(){
-            const title = document.getElementById('round-summary-title');
-            if(title) { title.focus(); }
-        })();
-        // Auto-hide after 8 seconds
-        setTimeout(function(){
-            const el = document.getElementById('round-summary');
-            if(el){ el.style.opacity='0'; setTimeout(()=>el.remove(), 600); }
-        }, 8000);
-    </script>
 </div>
 <style>
 keyframes fade-in { from { opacity:0; transform: translate(-50%, -8px);} to { opacity:1; transform: translate(-50%, 0);} }
