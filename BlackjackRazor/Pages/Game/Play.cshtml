@@ -50,7 +50,8 @@
         @if (snap is not null)
         {
             var dealer = snap.Dealer;
-            bool conceal = snap.Phase == GamePhase.PlayerActing && !snap.DealerPlayed;
+            // Conceal dealer hole card until dealer actually plays; includes Settled phase when all player hands bust.
+            bool conceal = !snap.DealerPlayed;
             <div class="flex gap-2 flex-wrap">
                 @for (int i = 0; i < dealer.Cards.Count; i++)
                 {

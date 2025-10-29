@@ -163,6 +163,7 @@ public sealed class GameService : IGameService
         else if (eval.IsBlackjack) _ctx.Events.Add("Hand blackjack");
         // Advance to next hand if completed and there are remaining
         AdvanceActiveHandIfNeeded();
+        MaybeAutoSettleOnAllBust();
         return Snapshot();
     }
 
@@ -173,6 +174,7 @@ public sealed class GameService : IGameService
         hand.MarkCompleted();
         _ctx.Events.Add("Stand");
         AdvanceActiveHandIfNeeded();
+        MaybeAutoSettleOnAllBust();
         return Snapshot();
     }
 
@@ -253,6 +255,7 @@ public sealed class GameService : IGameService
         hand.MarkCompleted();
         _ctx.Events.Add("Double down");
         AdvanceActiveHandIfNeeded();
+        MaybeAutoSettleOnAllBust();
         return Snapshot();
     }
 
@@ -266,6 +269,37 @@ public sealed class GameService : IGameService
         {
             // All player hands done; ready for dealer
             _ctx.Phase = GamePhase.PlayerActing; // remains until dealer advance requested
+        }
+    }
+
+    private void MaybeAutoSettleOnAllBust()
+    {
+        if (_ctx.PlayerHands.Count > 0 && _ctx.PlayerHands.All(h => h.IsCompleted) && _ctx.PlayerHands.All(h => HandEvaluator.Evaluate(h).IsBust))
+        {
+            if (_ctx.Phase != GamePhase.Settled)
+            {
+                _ctx.Phase = GamePhase.Settled;
+                _ctx.Events.Add("All player hands bust – round settled");
+                // Perform settlement (losses only); dealer not played, keep hole card hidden.
+                var dealerEval = HandEvaluator.Evaluate(_ctx.DealerHand); // not used for bust payouts but passed for consistency
+                decimal totalDelta = 0m;
+                _ctx.SettlementResults.Clear();
+                foreach (var hand in _ctx.PlayerHands)
+                {
+                    var eval = HandEvaluator.Evaluate(hand);
+                    var bet = hand.HasDoubled ? _ctx.CurrentBet * 2 : _ctx.CurrentBet;
+                    // Bust outcome: net delta already accounted by bet removal; payout service can compute but we shortcut.
+                    var outcome = HandOutcome.Bust;
+                    decimal payout = 0m; // no return
+                    decimal net = -bet; // total loss
+                    totalDelta += net;
+                    int idx = _ctx.PlayerHands.IndexOf(hand);
+                    _ctx.SettlementResults.Add(new SettlementHandResult(idx, outcome, bet, payout, net));
+                }
+                _ctx.Bankroll += totalDelta; // apply net (negative)
+                _ctx.LastRoundNet = totalDelta;
+                _ctx.Events.Add($"Round settled (net {(totalDelta>=0?"+":"")}{totalDelta})");
+            }
         }
     }
 
