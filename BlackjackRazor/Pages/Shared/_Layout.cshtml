@@ -1,3 +1,4 @@
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
 <!DOCTYPE html>
 <html lang="en" class="dark h-full">
 <head>
@@ -16,6 +17,25 @@
         @@media (max-width:400px){ .card-resp{ width:2rem !important; height:2.85rem !important; font-size:0.55rem !important; } }
         body { overflow-x:hidden; }
     </style>
+    @if (Env.IsDevelopment())
+    {
+        <!-- Tailwind CDN fallback for local rapid iteration (Development only) -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            table: { felt: '#0f3d2e', edge: '#062017' },
+                            accent: { win: '#16a34a', lose: '#dc2626', push: '#fbbf24' }
+                        },
+                        boxShadow: { card: '0 4px 10px rgba(0,0,0,0.45)' }
+                    }
+                }
+            };
+        </script>
+    }
 </head>
 <body class="min-h-full flex flex-col felt-bg">
     <header class="p-4 text-center text-xl font-semibold tracking-wide">

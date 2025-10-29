@@ -9,7 +9,9 @@ public class CspMiddleware
 
     // Allow remote HTTPS images + data URIs, restrict everything else fairly tightly for now.
     // 'unsafe-inline' for style temporarily until all inline styles removed; scripts not yet used.
-    private const string CspValue = "default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';";
+    // Added tailwindcdn.com to script-src to permit Tailwind CDN fallback in Development.
+    // NOTE: Inline styles already allowed for Tailwind's injected <style> tags via 'unsafe-inline'.
+    private const string CspValue = "default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdn.tailwindcss.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';";
 
     public CspMiddleware(RequestDelegate next) => _next = next;
 

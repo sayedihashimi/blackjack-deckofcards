@@ -42,12 +42,13 @@
 <div class="@classes card-face" aria-label="@ariaLabel" role="img" tabindex="0">
     @if (!Model.Hidden)
     {
-        var code = Model.Code; // already short code like AS, 0H, KD
+        var code = Model.Code; // short code like AS, 0H, KD
         var imgUrl = $"https://deckofcardsapi.com/static/img/{code}.png";
-        <img src="@imgUrl" alt="@ariaLabel" decoding="async" class="w-full h-full object-cover rounded" onerror="this.outerHTML='<span class=\'text-xs\'>@code</span>'" />
+        <img src="@imgUrl" alt="@ariaLabel" decoding="async" loading="lazy" class="w-full h-full object-cover rounded" onerror="this.outerHTML='<span class=\'text-xs\'>@code</span>'" />
     }
     else
     {
-        <img src="/img/card-back.svg" alt="Hidden card" class="w-full h-full object-cover rounded opacity-80" />
+        // Use remote deckofcardsapi back image per spec
+        <img src="https://deckofcardsapi.com/static/img/back.png" alt="Hidden card" decoding="async" loading="lazy" class="w-full h-full object-cover rounded opacity-80" />
     }
 </div>
