@@ -44,12 +44,18 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseSqlite($"Data Source={dataPath}"));
 
 // Typed Deck API client
-builder.Services.AddHttpClient<DeckApiClient>(client =>
+// Proper typed client registration mapping the interface directly so the configured
+// HttpClient (with BaseAddress set) is injected. The previous pattern registered
+// DeckApiClient as a typed client and then separately mapped IDeckApiClient to DeckApiClient,
+// which caused DI to construct DeckApiClient via the interface mapping and inject a plain
+// unconfigured HttpClient (missing BaseAddress). This resulted in runtime errors when
+// using relative URIs. Registering via AddHttpClient<IDeckApiClient, DeckApiClient> ensures
+// the configured client flows to interface consumers.
+builder.Services.AddHttpClient<IDeckApiClient, DeckApiClient>(client =>
 {
     client.BaseAddress = new Uri("https://deckofcardsapi.com");
     client.Timeout = TimeSpan.FromSeconds(10);
 });
-builder.Services.AddTransient<IDeckApiClient, DeckApiClient>();
 builder.Services.Configure<BlackjackOptions>(builder.Configuration.GetSection("Blackjack"));
 builder.Services.AddSingleton<IShoeManager, ShoeManager>();
 builder.Services.AddSingleton<IPayoutService, PayoutService>();

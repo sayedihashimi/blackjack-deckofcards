@@ -7,10 +7,12 @@ public class IndexModel : PageModel
 {
     public IActionResult OnGet()
     {
+        // If not authenticated, send to Sign In.
         if (!(User.Identity?.IsAuthenticated ?? false))
         {
             return RedirectToPage("/Auth/SignIn");
         }
-        return Page();
+        // Authenticated: redirect directly to Play page (primary experience)
+        return RedirectToPage("/Game/Play");
     }
 }

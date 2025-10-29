@@ -23,7 +23,7 @@ public class SignInModel : PageModel
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            Response.Redirect("/Game/New"); // placeholder destination
+            Response.Redirect("/Game/Play");
         }
     }
 
@@ -47,6 +47,6 @@ public class SignInModel : PageModel
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
         HttpContext.Session.SetString("Username", userRecord.Username);
 
-        return Redirect("/");
+        return RedirectToPage("/Game/Play");
     }
 }
