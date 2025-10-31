@@ -11,10 +11,12 @@
         /* Fallback minimal styles if Tailwind build fails to load */
         body { background:#0d1f1b; color:#f1f5f9; font-family: system-ui, sans-serif; }
         .felt-bg { background: radial-gradient(circle at 30% 30%, #115c44, #062017 85%); }
-        /* Responsive card scaling */
-        @@media (max-width:640px){ .card-resp{ width:2.5rem !important; height:3.4rem !important; font-size:0.65rem !important; } }
-        @@media (max-width:480px){ .card-resp{ width:2.25rem !important; height:3.1rem !important; font-size:0.6rem !important; } }
-        @@media (max-width:400px){ .card-resp{ width:2rem !important; height:2.85rem !important; font-size:0.55rem !important; } }
+        /* Responsive card scaling: smoothly scale card size with viewport width */
+        .card-resp {
+            width: clamp(2.2rem, 7vw, 4.5rem) !important;
+            height: clamp(3.1rem, 10vw, 6.5rem) !important;
+            font-size: clamp(0.6rem, 2vw, 1.1rem) !important;
+        }
         body { overflow-x:hidden; }
     </style>
     @if (Env.IsDevelopment())
