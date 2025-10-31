@@ -90,7 +90,14 @@
         <div class="bg-neutral-800/70 rounded p-4">
             <h2 class="text-lg font-semibold mb-2">Actions</h2>
             @{string Btn(string color, bool enabled) => $"inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none {color} {(enabled?"hover:brightness-110 active:brightness-95 shadow":string.Empty)}"; }
-            <form method="post" class="flex flex-wrap gap-2">
+            <form method="post" class="flex flex-wrap gap-2 items-end">
+                @if (!hasSnap || snap.Phase == GamePhase.NotStarted || snap.Phase == GamePhase.Settled)
+                {
+                    <div class="flex flex-col mr-2">
+                        <label for="BetAmount" class="text-xs text-neutral-300 mb-1">Bet</label>
+                        <input id="BetAmount" name="BetAmount" type="number" min="1" step="1" value="@Model.BetAmount" class="w-20 px-2 py-1 rounded bg-neutral-900 text-white border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+                    </div>
+                }
                 <button formaction="?handler=NewGame" class="@Btn("bg-blue-600", actions["New"].Enabled) @Disable(actions["New"].Enabled)" @(actions["New"].Enabled?null:"disabled") title="@actions["New"].Reason" aria-disabled="@(actions["New"].Enabled?"false":"true")">New</button>
                 <button formaction="?handler=Deal" class="@Btn("bg-indigo-600", actions["Deal"].Enabled) @Disable(actions["Deal"].Enabled)" @(actions["Deal"].Enabled?null:"disabled") title="@actions["Deal"].Reason" aria-disabled="@(actions["Deal"].Enabled?"false":"true")">Deal</button>
                 <button formaction="?handler=Hit" class="@Btn("bg-green-600", actions["Hit"].Enabled) @Disable(actions["Hit"].Enabled)" @(actions["Hit"].Enabled?null:"disabled") title="@actions["Hit"].Reason" aria-disabled="@(actions["Hit"].Enabled?"false":"true")">Hit</button>

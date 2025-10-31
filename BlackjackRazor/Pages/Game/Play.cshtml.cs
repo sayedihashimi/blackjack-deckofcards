@@ -10,6 +10,8 @@ namespace BlackjackRazor.Pages.Game;
 
 public class PlayModel : PageModel
 {
+    [BindProperty]
+    public decimal BetAmount { get; set; } = 10;
     private readonly IGameService _game;
     private readonly IGameStateSerializer _serializer;
     private readonly IGameRoundPersister _persister;
@@ -31,6 +33,15 @@ public class PlayModel : PageModel
     public IActionResult OnGet()
     {
         LoadSnapshotAndContext();
+        // Set BetAmount to previous bet if available, else default to 10
+        if (Snapshot != null && Snapshot.CurrentBet > 0)
+        {
+            BetAmount = Snapshot.CurrentBet;
+        }
+        else
+        {
+            BetAmount = 10;
+        }
         return Page();
     }
 
@@ -38,7 +49,8 @@ public class PlayModel : PageModel
     {
         try
         {
-            Snapshot = _game.NewGame(1000m, 10m);
+            var bet = BetAmount > 0 ? BetAmount : 10m;
+            Snapshot = _game.NewGame(1000m, bet);
             // Persist initial game row
             var username = HttpContext.Session.GetString("Username") ?? User.Identity?.Name ?? "Guest";
             var deckCount = _options.CurrentValue.DefaultDeckCount;
