@@ -46,16 +46,19 @@
 </head>
 <body class="min-h-full flex flex-col felt-bg">
         <div class="flex items-center justify-between max-w-3xl mx-auto">
-            <div>
-                BlackjackRazor <span class="text-sm opacity-60">(Scaffold)</span>
+            <div class="flex items-center gap-6">
+                <span class="text-2xl font-bold">Blackjack</span>
+                @if (User?.Identity?.IsAuthenticated == true)
+                {
+                    <div class="flex items-center gap-3">
+                        <span class="text-base font-medium text-yellow-300" title="Signed in as">@User.Identity.Name</span>
+                        <form method="post" action="/Auth/SignOut" class="inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-base font-medium transition">Sign out</button>
+                        </form>
+                    </div>
+                }
             </div>
-            @if (User?.Identity?.IsAuthenticated == true)
-            {
-                <form method="post" action="/Auth/SignOut" class="inline">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="ml-4 px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-base font-medium transition">Sign out</button>
-                </form>
-            }
         </div>
     </header>
     <main role="main" class="flex-1 container mx-auto p-4">

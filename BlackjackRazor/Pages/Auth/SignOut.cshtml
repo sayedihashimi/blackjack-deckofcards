@@ -7,6 +7,8 @@
 @functions {
     public async Task<IActionResult> OnPostAsync()
     {
+        // Clear all session data (including game state)
+        HttpContext.Session.Clear();
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToPage("/Index");
     }
