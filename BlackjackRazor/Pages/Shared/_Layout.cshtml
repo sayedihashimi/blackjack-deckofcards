@@ -1,7 +1,7 @@
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
 @using Microsoft.AspNetCore.Antiforgery
 <!DOCTYPE html>
-<html lang="en" class="dark h-full">
+<html lang="en" class="dark h-full felt-bg">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,8 +10,12 @@
     <link rel="stylesheet" href="~/css/site.css" />
     <style>
         /* Fallback minimal styles if Tailwind build fails to load */
-        body { background:#0d1f1b; color:#f1f5f9; font-family: system-ui, sans-serif; }
-        .felt-bg { background: radial-gradient(circle at 30% 30%, #115c44, #062017 85%); }
+                html, body { height: 100%; min-height: 100%; }
+                html.felt-bg, body.felt-bg {
+                    background: radial-gradient(circle at 30% 30%, #115c44, #062017 85%);
+                    background-attachment: fixed;
+                    background-size: cover;
+                }
         /* Responsive card scaling: smoothly scale card size with viewport width */
         .card-resp {
             width: clamp(2.2rem, 7vw, 4.5rem) !important;
@@ -41,7 +45,6 @@
     }
 </head>
 <body class="min-h-full flex flex-col felt-bg">
-    <header class="p-4 text-center text-xl font-semibold tracking-wide">
         <div class="flex items-center justify-between max-w-3xl mx-auto">
             <div>
                 BlackjackRazor <span class="text-sm opacity-60">(Scaffold)</span>

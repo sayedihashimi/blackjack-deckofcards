@@ -175,6 +175,40 @@
             <div class="text-neutral-400 text-sm">No game loaded.</div>
         }
     </div>
+
+    @* Past 20 hands table *@
+    @if (Model.PastHands != null && Model.PastHands.Any())
+    {
+        <div class="mt-6">
+            <h3 class="text-sm font-semibold mb-1">Past 50 Hands</h3>
+            <table class="w-full text-xs border border-neutral-700">
+                <thead class="bg-neutral-700/60">
+                    <tr>
+                        <th class="p-1 text-left">Date</th>
+                        <th class="p-1 text-right">Bet</th>
+                        <th class="p-1 text-right">Payout</th>
+                        <th class="p-1 text-left">Outcome</th>
+                        <th class="p-1 text-center">Split</th>
+                        <th class="p-1 text-center">Double</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var hand in Model.PastHands)
+                {
+                    var outcomeClass = hand.Outcome == BlackjackRazor.Data.HandOutcome.Win || hand.Outcome == BlackjackRazor.Data.HandOutcome.Blackjack ? "text-green-400" : hand.Outcome == BlackjackRazor.Data.HandOutcome.Lose || hand.Outcome == BlackjackRazor.Data.HandOutcome.Bust ? "text-red-400" : "text-neutral-300";
+                    <tr class="border-t border-neutral-700">
+                        <td class="p-1">@hand.PlayedUtc.ToLocalTime().ToString("g")</td>
+                        <td class="p-1 text-right">@hand.Bet</td>
+                        <td class="p-1 text-right">@hand.Payout</td>
+                        <td class="p-1 @outcomeClass">@hand.Outcome</td>
+                        <td class="p-1 text-center">@(hand.WasSplit ? "✔" : "")</td>
+                        <td class="p-1 text-center">@(hand.WasDouble ? "✔" : "")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
 </div>
 
 <style>

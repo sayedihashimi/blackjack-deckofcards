@@ -10,6 +10,7 @@ namespace BlackjackRazor.Pages.Game;
 
 public class PlayModel : PageModel
 {
+    public List<BlackjackRazor.Data.Hand>? PastHands { get; set; }
     [BindProperty]
     public decimal BetAmount { get; set; } = 10;
     private readonly IGameService _game;
@@ -41,6 +42,22 @@ public class PlayModel : PageModel
         else
         {
             BetAmount = 10;
+        }
+
+        // Fetch last 50 hands for the current user
+        string? username = HttpContext.Session.GetString("Username") ?? User.Identity?.Name;
+        if (!string.IsNullOrEmpty(username))
+        {
+            var user = _db.Users.FirstOrDefault(u => u.Username == username);
+            if (user != null)
+            {
+                var userGameIds = _db.Games.Where(g => g.UserId == user.Id).Select(g => g.Id);
+                PastHands = _db.Hands
+                    .Where(h => userGameIds.Contains(h.GameId))
+                    .OrderByDescending(h => h.PlayedUtc)
+                    .Take(50)
+                    .ToList();
+            }
         }
         return Page();
     }
