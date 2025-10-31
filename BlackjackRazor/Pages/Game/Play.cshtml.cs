@@ -17,6 +17,7 @@ public class PlayModel : PageModel
     private readonly AppDbContext _db;
 
     public GameStateSnapshot? Snapshot { get; private set; }
+    public int DealerDelayMs => _options.CurrentValue.DealerCardDelayMs;
 
     public PlayModel(IGameService game, IGameStateSerializer serializer, IGameRoundPersister persister, IOptionsMonitor<BlackjackOptions> options, AppDbContext db)
     {
@@ -141,6 +142,39 @@ public class PlayModel : PageModel
             TempData["Error"] = ex.Message;
         }
         return RedirectToPage();
+    }
+
+    /// <summary>
+    /// Incremental dealer step endpoint used by auto-play script. Returns JSON snapshot summary.
+    /// </summary>
+    public async Task<IActionResult> OnPostDealerStep()
+    {
+        try
+        {
+            LoadSnapshotAndContext();
+            Snapshot = await _game.DealerStepAsync();
+            Persist();
+            if (Snapshot == null) return new JsonResult(new { ok = false });
+            var dealer = Snapshot.Dealer;
+            var cardCodes = dealer.Cards.Select(c => c.ToShortCode()).ToArray();
+            bool conceal = !(Snapshot.DealerPlayed || Snapshot.Phase == GamePhase.DealerActing);
+            return new JsonResult(new
+            {
+                ok = true,
+                phase = Snapshot.Phase.ToString(),
+                dealerPlayed = Snapshot.DealerPlayed,
+                cards = cardCodes,
+                conceal,
+                total = dealer.Evaluation.Total,
+                soft = dealer.Evaluation.IsSoft,
+                bust = dealer.Evaluation.IsBust,
+                more = Snapshot.Phase == GamePhase.DealerActing // still acting means more steps
+            });
+        }
+        catch (Exception ex)
+        {
+            return new JsonResult(new { ok = false, error = ex.Message });
+        }
     }
 
     public async Task<IActionResult> OnPostSettle()

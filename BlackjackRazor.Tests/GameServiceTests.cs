@@ -66,10 +66,9 @@ public class GameServiceTests
         var game = provider.GetRequiredService<IGameService>();
         game.NewGame(200m, 25m);
         await game.DealInitialAsync();
-        await game.HitAsync(); // player goes to 18
-        await game.HitAsync(); // player busts
-        await game.AdvanceDealerAsync();
-        var final = game.SettleRound();
+        await game.HitAsync(); // player busts (first hit using King)
+        // Auto settlement already applied on bust; do not call SettleRound again.
+        var final = game.Refresh();
         Assert.Equal(175m, final.Bankroll);
     }
 

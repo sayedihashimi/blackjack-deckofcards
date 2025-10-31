@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using BlackjackRazor.Domain;
 using BlackjackRazor.Infrastructure;
 using BlackjackRazor.Services;
@@ -10,6 +11,8 @@ public class AllHandsBustDealerRevealTests
     private ServiceProvider BuildProvider()
     {
         var services = new ServiceCollection();
+        services.AddOptions();
+        services.Configure<BlackjackOptions>(o => { });
         services.AddSingleton<IShoeManager, StubShoeManagerAllBust>();
         services.AddSingleton<IPayoutService, PayoutService>();
         services.AddSingleton<IDealerLogic, DealerLogic>();
@@ -18,7 +21,7 @@ public class AllHandsBustDealerRevealTests
     }
 
     [Fact]
-    public async Task Dealer_Reveals_And_Plays_When_All_Player_Hands_Bust()
+    public async Task Dealer_Does_Not_Play_When_All_Player_Hands_Bust_Auto_Settled()
     {
         var provider = BuildProvider();
         var game = provider.GetRequiredService<IGameService>();
@@ -29,11 +32,11 @@ public class AllHandsBustDealerRevealTests
         {
             snap = await game.HitAsync();
         }
-        // After bust, auto dealer should have played
-        Assert.True(snap.DealerPlayed, "Dealer should have auto-played when all player hands bust.");
+        // After bust, auto settlement occurs WITHOUT dealer playing.
+        Assert.False(snap.DealerPlayed);
         Assert.Equal(GamePhase.Settled, snap.Phase);
-        Assert.Contains(snap.Events, e => e.Contains("Auto dealer play"));
-        // Hidden card reveal implied by DealerPlayed; dealer should have at least 2 cards.
+        Assert.Contains(snap.Events, e => e.Contains("All player hands bust"));
+        // Dealer hole card should remain concealed (DealerPlayed false)
         Assert.True(snap.Dealer.Cards.Count >= 2);
     }
 

@@ -50,6 +50,11 @@ public interface IGameService
     Task<GameStateSnapshot> HitAsync(CancellationToken ct = default);
     GameStateSnapshot Stand();
     Task<GameStateSnapshot> AdvanceDealerAsync(CancellationToken ct = default);
+    /// <summary>
+    /// Advances the dealer one step (draw a single card if required by rules). Returns snapshot after the step.
+    /// When dealer finishes, phase transitions to Settled and DealerPlayed is set.
+    /// </summary>
+    Task<GameStateSnapshot> DealerStepAsync(CancellationToken ct = default);
     GameStateSnapshot SettleRound();
     Task<GameStateSnapshot> SplitAsync(CancellationToken ct = default);
     Task<GameStateSnapshot> DoubleAsync(CancellationToken ct = default);
@@ -65,15 +70,17 @@ public sealed class GameService : IGameService
     private readonly IShoeManager _shoe;
     private readonly IPayoutService _payout;
     private readonly IDealerLogic _dealer;
+    private readonly Microsoft.Extensions.Options.IOptionsMonitor<BlackjackOptions> _options;
     private readonly GameContext _ctx = new();
 
     public GameContext RawContext => _ctx;
 
-    public GameService(IShoeManager shoe, IPayoutService payout, IDealerLogic dealer)
+    public GameService(IShoeManager shoe, IPayoutService payout, IDealerLogic dealer, Microsoft.Extensions.Options.IOptionsMonitor<BlackjackOptions> options)
     {
         _shoe = shoe;
         _payout = payout;
         _dealer = dealer;
+        _options = options;
     }
 
     public GameStateSnapshot NewGame(decimal startingBankroll, decimal bet)
@@ -192,6 +199,50 @@ public sealed class GameService : IGameService
         var dealerEval = HandEvaluator.Evaluate(_ctx.DealerHand);
         if (dealerEval.IsBust) _ctx.Events.Add("Dealer bust");
         else _ctx.Events.Add($"Dealer stands on {dealerEval.Total}{(dealerEval.IsSoft?" (Soft)":"")}");
+        return Snapshot();
+    }
+
+    public async Task<GameStateSnapshot> DealerStepAsync(CancellationToken ct = default)
+    {
+        // Transition into dealer acting phase if all hands done and not settled (not all bust scenario)
+        if (_ctx.Phase == GamePhase.PlayerActing && _ctx.PlayerHands.All(h => h.IsCompleted) && _ctx.Phase != GamePhase.Settled)
+        {
+            // If all bust, round already settled; no dealer play.
+            if (_ctx.PlayerHands.All(h => HandEvaluator.Evaluate(h).IsBust)) return Snapshot();
+            _ctx.Phase = GamePhase.DealerActing;
+        }
+        RequirePhase(GamePhase.DealerActing);
+        var hand = _ctx.DealerHand;
+        var eval = HandEvaluator.Evaluate(hand);
+        bool hitSoft17 = _options.CurrentValue.DealerHitSoft17;
+
+        // Determine if dealer should draw.
+        bool shouldDraw = false;
+        if (!eval.IsBust && !eval.IsBlackjack)
+        {
+            if (eval.Total < 17) shouldDraw = true;
+            else if (eval.Total == 17 && eval.IsSoft && hitSoft17) shouldDraw = true;
+        }
+
+        if (shouldDraw)
+        {
+            var draw = await _shoe.DrawAsync(1, ct);
+            if (draw.Count > 0)
+            {
+                hand.AddCard(draw[0]);
+                eval = HandEvaluator.Evaluate(hand);
+            }
+        }
+        else
+        {
+            // Dealer stands or finishes
+            hand.MarkCompleted();
+            _ctx.DealerPlayed = true;
+            var finalEval = HandEvaluator.Evaluate(hand);
+            if (finalEval.IsBust) _ctx.Events.Add("Dealer bust");
+            else _ctx.Events.Add($"Dealer stands on {finalEval.Total}{(finalEval.IsSoft?" (Soft)":"")}");
+            _ctx.Phase = GamePhase.Settled;
+        }
         return Snapshot();
     }
 

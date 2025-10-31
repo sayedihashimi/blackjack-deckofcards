@@ -13,4 +13,9 @@ public sealed class BlackjackOptions
     /// Whether dealer should hit on soft 17. Defaults to false.
     /// </summary>
     public bool DealerHitSoft17 { get; set; } = false;
+    /// <summary>
+    /// Delay in milliseconds between dealer drawing cards during automatic play.
+    /// Defaults to 2000 (2 seconds).
+    /// </summary>
+    public int DealerCardDelayMs { get; set; } = 2000;
 }

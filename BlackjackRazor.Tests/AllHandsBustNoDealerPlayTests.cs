@@ -1,5 +1,7 @@
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using BlackjackRazor.Domain;
+using BlackjackRazor.Data;
 using BlackjackRazor.Infrastructure;
 using BlackjackRazor.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,6 +12,8 @@ public class AllHandsBustNoDealerPlayTests
     private ServiceProvider BuildProvider()
     {
         var services = new ServiceCollection();
+        services.AddOptions();
+        services.Configure<BlackjackOptions>(o => { });
         services.AddSingleton<IShoeManager, StubShoeManagerAllBust>();
         services.AddSingleton<IPayoutService, PayoutService>();
         services.AddSingleton<IDealerLogic, DealerLogic>();

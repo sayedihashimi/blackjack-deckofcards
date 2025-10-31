@@ -61,7 +61,7 @@ builder.Services.AddSingleton<IShoeManager, ShoeManager>();
 builder.Services.AddSingleton<IPayoutService, PayoutService>();
 builder.Services.AddSingleton<IDealerLogic, DealerLogic>();
 // Game orchestrator should be scoped per request to avoid cross-user state leakage.
-builder.Services.AddScoped<IGameService, GameService>();
+builder.Services.AddScoped<IGameService, GameService>(); // options monitor automatically injected
 builder.Services.AddSingleton<IGameStateSerializer, GameStateSerializer>();
 builder.Services.AddScoped<IGameRoundPersister, EfGameRoundPersister>();
 

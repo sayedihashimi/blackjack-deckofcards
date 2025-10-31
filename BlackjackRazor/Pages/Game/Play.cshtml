@@ -8,8 +8,6 @@
     bool allHandsCompleted = hasSnap && snap!.PlayerHands.All(h => h.IsCompleted);
     var activeHand = hasSnap && snap!.ActiveHandIndex < snap.PlayerHands.Count ? snap.PlayerHands[snap.ActiveHandIndex] : null;
     string Disable(bool enabled) => enabled ? "" : "opacity-40 cursor-not-allowed pointer-events-none";
-
-    // Build action state with reasons for disabled buttons
     var actions = new Dictionary<string,(bool Enabled,string Reason)>{
         ["New"] = ((!hasSnap) || snap!.Phase is GamePhase.NotStarted or GamePhase.Settled)
             ? (true, "Start a new round")
@@ -39,25 +37,22 @@
 }
 
 <div class="flex flex-col gap-4 lg:flex-row">
-    @* Floating end-of-round summary banner (auto-hide) *@
     @if (snap is not null && snap.Phase == GamePhase.Settled && snap.SettlementResults.Any())
     {
         @await Html.PartialAsync("_RoundSummary", new BlackjackRazor.UI.RoundSummaryModel(snap))
     }
-    <!-- Dealer Row -->
     <div class="flex-1 bg-neutral-800/60 rounded p-4">
         <h2 class="text-xl font-semibold mb-2">Dealer</h2>
         @if (snap is not null)
         {
             var dealer = snap.Dealer;
-            // Conceal dealer hole card until dealer actually plays; includes Settled phase when all player hands bust.
-            bool conceal = !snap.DealerPlayed;
-            <div class="flex gap-2 flex-wrap">
+            bool conceal = !(snap.DealerPlayed || snap.Phase == GamePhase.DealerActing);
+            <div id="dealer-cards" class="flex gap-2 flex-wrap" data-initial="true">
                 @for (int i = 0; i < dealer.Cards.Count; i++)
                 {
                     var dc = dealer.Cards[i];
-                    bool hidden = conceal && i == 1; // hide dealer hole card (second card) until dealer phase
-                    @await Html.PartialAsync("_Card", new BlackjackRazor.UI.CardRenderModel(hidden ? dc.ToShortCode() : dc.ToShortCode(), hidden, "md"))
+                    bool hidden = conceal && i == 1;
+                    @await Html.PartialAsync("_Card", new BlackjackRazor.UI.CardRenderModel(dc.ToShortCode(), hidden, "md"))
                 }
             </div>
             <div class="mt-2 text-sm text-neutral-300">
@@ -72,8 +67,6 @@
             </div>
         }
     </div>
-
-    <!-- Player Hands & Actions -->
     <div class="flex-[2] flex flex-col gap-4">
         <div class="bg-neutral-800/60 rounded p-4">
             <h2 class="text-xl font-semibold mb-2">Your Hands</h2>
@@ -104,7 +97,7 @@
                 <button formaction="?handler=Stand" class="@Btn("bg-yellow-600 text-black", actions["Stand"].Enabled) @Disable(actions["Stand"].Enabled)" @(actions["Stand"].Enabled?null:"disabled") title="@actions["Stand"].Reason" aria-disabled="@(actions["Stand"].Enabled?"false":"true")">Stand</button>
                 <button formaction="?handler=Split" class="@Btn("bg-pink-600", actions["Split"].Enabled) @Disable(actions["Split"].Enabled)" @(actions["Split"].Enabled?null:"disabled") title="@actions["Split"].Reason" aria-disabled="@(actions["Split"].Enabled?"false":"true")">Split</button>
                 <button formaction="?handler=Double" class="@Btn("bg-orange-600", actions["Double"].Enabled) @Disable(actions["Double"].Enabled)" @(actions["Double"].Enabled?null:"disabled") title="@actions["Double"].Reason" aria-disabled="@(actions["Double"].Enabled?"false":"true")">Double</button>
-                <button formaction="?handler=Dealer" class="@Btn("bg-red-600", actions["Dealer"].Enabled) @Disable(actions["Dealer"].Enabled)" @(actions["Dealer"].Enabled?null:"disabled") title="@actions["Dealer"].Reason" aria-disabled="@(actions["Dealer"].Enabled?"false":"true")">Dealer</button>
+                <button id="dealer-btn" formaction="?handler=Dealer" class="@Btn("bg-red-600", actions["Dealer"].Enabled) @Disable(actions["Dealer"].Enabled)" @(actions["Dealer"].Enabled?null:"disabled") title="@actions["Dealer"].Reason" aria-disabled="@(actions["Dealer"].Enabled?"false":"true")">Dealer</button>
                 <button formaction="?handler=Settle" class="@Btn("bg-teal-600", actions["Settle"].Enabled) @Disable(actions["Settle"].Enabled)" @(actions["Settle"].Enabled?null:"disabled") title="@actions["Settle"].Reason" aria-disabled="@(actions["Settle"].Enabled?"false":"true")">Settle</button>
             </form>
             @if (TempData["Error"] is string err)
@@ -113,8 +106,6 @@
             }
         </div>
     </div>
-
-    <!-- Stats Sidebar -->
     <div class="w-full lg:w-64 bg-neutral-800/60 rounded p-4">
         <h2 class="text-xl font-semibold mb-2">Stats</h2>
         @if (snap is not null)
@@ -181,4 +172,72 @@
 
 <style>
     .inner-card { background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), rgba(0,0,0,0.4)); }
+    .dealer-flip { transition: transform .4s ease, filter .4s ease; }
+    .dealer-flip.new-card { animation: pop-in .35s ease; }
+    @@keyframes pop-in { 0% { transform: scale(.6) rotate(-10deg); opacity:0; } 60% { transform: scale(1.05); opacity:1; } 100% { transform: scale(1); } }
 </style>
+
+@{
+    var shouldAutoDealer = snap is not null && snap.Phase == GamePhase.PlayerActing && allHandsCompleted && !snap.PlayerHands.All(h => h.Evaluation.IsBust);
+}
+<script>
+    (function(){
+        const shouldAuto = @((shouldAutoDealer).ToString().ToLower());
+        const delayMs = @Model.DealerDelayMs;
+        const dealerContainer = document.getElementById('dealer-cards');
+        const dealerBtn = document.getElementById('dealer-btn');
+        let running = false;
+        async function stepDealer(){
+            try {
+                const resp = await fetch('?handler=DealerStep', { method: 'POST'});
+                if(!resp.ok){ console.warn('DealerStep HTTP error'); return finish(); }
+                const data = await resp.json();
+                if(!data.ok){ console.warn('DealerStep logical error', data.error); return finish(); }
+                renderDealer(data);
+                if(data.more){
+                    setTimeout(stepDealer, delayMs);
+                } else {
+                    finish(true);
+                }
+            } catch(err){
+                console.error('DealerStep exception', err);
+                finish();
+            }
+        }
+        function renderDealer(data){
+            if(!dealerContainer) return;
+            dealerContainer.innerHTML = '';
+            data.cards.forEach((code, idx) => {
+                const hidden = data.conceal && idx === 1;
+                const div = document.createElement('div');
+                div.className = 'dealer-flip new-card';
+                div.innerHTML = `<div class=\"relative w-12 h-16 rounded border border-neutral-600 bg-neutral-700 flex items-center justify-center text-sm font-semibold ${hidden?'filter brightness-50':''}\" aria-label=\"${hidden?'Hidden card':'Card '+code}\">`+
+                                (hidden?'<span class=\"text-neutral-500\">??</span>':`<span>${code}</span>`) +
+                                '</div>';
+                dealerContainer.appendChild(div);
+            });
+        }
+        function start(){
+            if(running) return;
+            running = true;
+            if(dealerBtn){ dealerBtn.disabled = true; dealerBtn.dataset.auto='running'; }
+            console.log('[DealerAuto] Starting dealer sequence...');
+            stepDealer();
+        }
+        function finish(success){
+            running = false;
+            console.log('[DealerAuto] Dealer sequence finished', success);
+            setTimeout(()=>window.location.reload(), 600);
+        }
+        if(dealerBtn){
+            dealerBtn.addEventListener('click', function(ev){
+                if(this.hasAttribute('disabled')) return;
+                ev.preventDefault();
+                start();
+            });
+        }
+        if(shouldAuto){
+            setTimeout(start, 400);
+        }
+    })();
+</script>
